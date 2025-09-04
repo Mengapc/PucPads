@@ -43,7 +43,7 @@ Necessidade de uma ferramenta própria para manter a prática pedagógica.
 
 ### 2.2 Usuários Alvo
 
- · Estudantes do curso de Produção Musical.
+ · Estudantes do curso de Produção Musical e Jogos Digitais.
 
  · Professores e monitores em atividades de performance e criação.
 
