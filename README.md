@@ -301,11 +301,13 @@ Documentar resultado: prints, código mínimo, observações.
 
 Avaliar aplicabilidade: serve para o MVP ou fica para versões futuras?
 
-## 9. Referências de Pesquisa sobre Áudio na Unity
+## 9. Referências de Pesquisa
+
+### 9.1 Áudio na Unity
 
 Durante a pesquisa, foram identificados materiais práticos relevantes sobre como organizar, disparar e manipular sons no Unity.
 
-### Vídeo 1 – Introdução ao AudioManager
+#### Vídeo 1 – Introdução ao AudioManager
 
 📎 [Introduction to AUDIO in Unity](https://www.youtube.com/watch?v=6OT43pvUyfY) 
 
@@ -315,7 +317,7 @@ Durante a pesquisa, foram identificados materiais práticos relevantes sobre com
 
 3. Focado em boas práticas para organização e controle em jogos.
 
-### Vídeo 2 – Boas e más práticas + Mixer
+#### Vídeo 2 – Boas e más práticas + Mixer
 
 📎 [How To Add Sound Effects the RIGHT Way | Unity Tutorial](https://www.youtube.com/watch?v=DU7cgVsU2rM&t=87s)
 
@@ -331,7 +333,7 @@ Durante a pesquisa, foram identificados materiais práticos relevantes sobre com
 
      · Volume dos efeitos sonoros (SFX).
 
-### Vídeo 3 – Efeitos e automação de áudio
+#### Vídeo 3 – Efeitos e automação de áudio
 
 📎 [Introduction to Immersive Audio in Games](https://www.youtube.com/watch?v=b52rP-1xBnc)
 
@@ -341,7 +343,7 @@ Durante a pesquisa, foram identificados materiais práticos relevantes sobre com
 
 3. Relevante para futuras versões do projeto, focadas em imersão e customização avançada.
 
-### Documentação Oficial da Unity
+#### Documentação Oficial da Unity
 
 📎 [Unity Manual – Sistema de Áudio](https://docs.unity3d.com/6000.2/Documentation/Manual/Audio.html)
 
@@ -359,7 +361,7 @@ Durante a pesquisa, foram identificados materiais práticos relevantes sobre com
 
 _Fonte essencial que será utilizada como base de documentação técnica ao longo do projeto._
 
-### Artigo – Integração de Música e SFX no Unity
+#### Artigo – Integração de Música e SFX no Unity
 
 📎 [Integrate Music and Sound Effects in Unity for Games – Moldstud](https://moldstud.com/articles/p-integrate-music-and-sound-effects-in-unity-for-games)
 
@@ -396,3 +398,67 @@ Resumo técnico (foco em recursos da Unity):
      · Otimizar o uso de memória ao lidar com muitos samples.
 
      · Manter equilíbrio entre qualidade de áudio e performance (especialmente em mobile).
+
+### 9.2 Input Touch na Unity
+
+#### Vídeo 1 – Introdução rápida ao Input System (Touch)
+
+📎 [Unity Touch Input Tutorial: From Basics to Advanced](https://www.youtube.com/watch?v=KrBWCUbfe4o)
+
+1. Demonstra o funcionamento do Input System para interações por toque.
+
+2. Ensina a configurar o celular para testes diretos em dispositivo mobile rodando pela Unity.
+
+3. Mostra de forma rápida o potencial do sistema de touch sem necessidade de scripts complexos.
+
+#### Vídeo 2 – Configuração básica com Input System
+
+📎 [Mobile input/touch control for your Unity game](https://www.youtube.com/watch?v=NqrJHj9xlqY)
+
+1. Apresenta a configuração inicial do Input System.
+
+2. Foco em exemplos voltados a jogos: botões e joysticks virtuais.
+
+3. Mostra scripts pré-criados pelo Unity Input System que podem ser adaptados para interação com pads.
+
+#### Vídeo 3 – Input Touch detalhado com scripts
+
+📎 [How to use Touch with NEW Input System - Unity Tutorial](https://www.youtube.com/watch?v=ERAN5KBy2Gs)
+
+1. Explicação aprofundada sobre toques na tela e como capturar posições.
+
+2. Demonstra duas abordagens:
+
+3. Input gerenciado diretamente pelo Input System.
+
+4. Input tratado manualmente via scripts.
+
+5. Ensina a organizar a leitura do input de forma clara e escalável.
+
+6. Exemplo prático: teletransportar um objeto para o ponto clicado na tela.
+
+#### Documentação Oficial – Unity Input (Touch)
+
+📎 [Unity Script Reference – Input](https://docs.unity3d.com/ScriptReference/Input.html)
+
+1. Principais funções para toque:
+
+     · Input.touchCount → número de toques simultâneos detectados.
+
+     · Input.GetTouch(index) → retorna informações de um toque específico.
+
+     · Touch.position → posição (x, y) na tela.
+
+     · Touch.phase → estado do toque: Began, Moved, Stationary, Ended, Canceled.
+
+     · Touch.deltaPosition → diferença de movimento desde o último frame.
+
+     · Touch.fingerId → identifica cada dedo de forma única.
+
+     · Input.multiTouchEnabled → habilita/desabilita múltiplos toques.
+
+2. Aplicação no PucPads:
+
+     · Usar toque único para disparar sons nos pads.
+
+     · Usar multitouch para suportar a performance com múltiplos dedos ao mesmo tempo.
