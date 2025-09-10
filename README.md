@@ -300,3 +300,99 @@ Criar protótipo rápido na Unity para testar.
 Documentar resultado: prints, código mínimo, observações.
 
 Avaliar aplicabilidade: serve para o MVP ou fica para versões futuras?
+
+## 9. Referências de Pesquisa sobre Áudio na Unity
+
+Durante a pesquisa, foram identificados materiais práticos relevantes sobre como organizar, disparar e manipular sons no Unity.
+
+### Vídeo 1 – Introdução ao AudioManager
+
+📎 [Introduction to AUDIO in Unity](https://www.youtube.com/watch?v=6OT43pvUyfY) 
+
+1. Mostra a criação de um AudioManager para centralizar o controle de sons.
+
+2. Evita a necessidade de criar múltiplos objetos de áudio na cena.
+
+3. Focado em boas práticas para organização e controle em jogos.
+
+### Vídeo 2 – Boas e más práticas + Mixer
+
+📎 [How To Add Sound Effects the RIGHT Way | Unity Tutorial](https://www.youtube.com/watch?v=DU7cgVsU2rM&t=87s)
+
+1. Demonstra maneiras corretas e equivocadas de organizar áudios.
+
+2. Aborda técnica de instanciar objeto temporário para tocar áudio e destruí-lo depois (reduz complexidade).
+
+3. Introduz o uso de AudioMixer para criar sliders independentes:
+
+     · Volume Master.
+
+     · Volume da música.
+
+     · Volume dos efeitos sonoros (SFX).
+
+### Vídeo 3 – Efeitos e automação de áudio
+
+📎 [Introduction to Immersive Audio in Games](https://www.youtube.com/watch?v=b52rP-1xBnc)
+
+1. Mostra a utilização de efeitos imersivos no áudio.
+
+2. Destaca o uso de automação em efeitos como reverb, low pass filter, etc.
+
+3. Relevante para futuras versões do projeto, focadas em imersão e customização avançada.
+
+### Documentação Oficial da Unity
+
+📎 [Unity Manual – Sistema de Áudio](https://docs.unity3d.com/6000.2/Documentation/Manual/Audio.html)
+
+1. Explica a arquitetura de áudio no Unity.
+
+2. Detalhes sobre:
+
+     · AudioSource e AudioClip.
+
+     · Importação e compressão de formatos (WAV, MP3, OGG).
+
+     · Diferença entre áudio 2D e 3D.
+
+     · Uso de AudioMixer e efeitos nativos.
+
+_Fonte essencial que será utilizada como base de documentação técnica ao longo do projeto._
+
+### Artigo – Integração de Música e SFX no Unity
+
+📎 [Integrate Music and Sound Effects in Unity for Games – Moldstud](https://moldstud.com/articles/p-integrate-music-and-sound-effects-in-unity-for-games)
+
+Resumo técnico (foco em recursos da Unity):
+
+1. A Unity oferece um sistema robusto de áudio que pode ser aplicado além de jogos, em softwares musicais e interativos.
+
+2. Principais recursos:
+
+     · AudioSource e AudioClip para disparo e reprodução de sons.
+
+     · AudioListener como ponto de referência de áudio na cena.
+
+     · AudioMixer para mixagem, controle de volumes e aplicação de efeitos.
+
+     · Formatos de áudio suportados: WAV, MP3, OGG, AIFF (com opções de compressão e stream).
+
+3. Configurações importantes:
+
+     · Escolha entre streaming (faixas longas, como música de fundo) ou carregamento em memória (samples curtos para pads).
+
+     · Diferenciação entre áudio 2D (ideal para pads e softwares musicais) e áudio 3D (posicionamento espacial, menos relevante neste caso).
+
+4. Efeitos e processamento:
+
+     · Unity possui suporte nativo a filtros como Reverb, Low Pass, High Pass e Echo.
+
+     · Possibilidade de automação de parâmetros para criar variações dinâmicas.
+
+5. Boas práticas destacadas no artigo:
+
+     · Separar música, efeitos e outros sons em diferentes mixers/canais.
+
+     · Otimizar o uso de memória ao lidar com muitos samples.
+
+     · Manter equilíbrio entre qualidade de áudio e performance (especialmente em mobile).
