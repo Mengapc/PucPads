@@ -425,6 +425,8 @@ Resumo técnico (foco em recursos da Unity):
 
 📎 [How to use Touch with NEW Input System - Unity Tutorial](https://www.youtube.com/watch?v=ERAN5KBy2Gs)
 
+⭐ 📎 [Versão atualizada do mesmo vídeo](https://www.youtube.com/watch?v=4MOOitENQVg)
+
 1. Explicação aprofundada sobre toques na tela e como capturar posições.
 
 2. Demonstra duas abordagens:
