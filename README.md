@@ -512,7 +512,15 @@ Durante o desenvolvimento na Unity, os seguintes itens foram identificados como 
 
 * **Latência de Áudio:** Embora funcional, a latência do sistema de áudio padrão da Unity foi identificada como um ponto de atenção que necessitaria de testes aprofundados e possíveis otimizações, especialmente para o ambiente mobile.
 
-### 10.3 Análise Comparativa da Plataforma de Desenvolvimento (JUCE vs. Unity)
+### 10.3 Justificativa para a Transição de Plataforma (Unity para JUCE)
+
+Inicialmente, a Unity foi considerada como plataforma de prototipagem devido à familiaridade e rapidez no desenvolvimento de interfaces. Contudo, a experiência prática no desenvolvimento do MVP com ambas as ferramentas revelou diferenças significativas em relação aos requisitos específicos de um aplicativo de produção musical, especialmente no que tange à performance de áudio e à otimização do processo de desenvolvimento.
+
+Apesar do progresso inicial na Unity, desafios inerentes à sua arquitetura para áudio de baixa latência e a complexidade de futuras implementações (como multitouch e carregamento dinâmico de kits) indicaram um alto risco de retrabalho e limitações no produto final. A decisão de transicionar completamente para o JUCE foi tomada com base na sua especialização em áudio nativo e na eficiência comprovada na entrega dos requisitos técnicos do MVP.
+
+Esta seção, em conjunto com a "Análise Comparativa" e a "Recomendação Estratégica" a seguir, detalha os fundamentos técnicos que solidificam essa decisão, demonstrando que o investimento em aprendizado e desenvolvimento em JUCE é o caminho mais estratégico para a longevidade e qualidade do projeto PucPads.
+
+### 10.4 Análise Comparativa da Plataforma de Desenvolvimento (JUCE vs. Unity)
 
 Conforme o plano inicial de pesquisa, foram avaliadas as capacidades de ambas as plataformas para o desenvolvimento do protótipo e da versão final. A experiência prática com o JUCE revelou pontos cruciais que impactam a eficiência e a qualidade do projeto:
 
@@ -520,7 +528,7 @@ Conforme o plano inicial de pesquisa, foram avaliadas as capacidades de ambas as
 * **Tratamento de Áudio Multicanal e Polifonia:** A gestão de múltiplos `AudioSources` simultâneos, mixagem e aplicação de efeitos são funcionalidades nativas e altamente eficientes no JUCE. Na Unity, essa implementação demandaria um esforço considerável para otimizar o uso de recursos e evitar cortes (clipping) ou travamentos.
 * **Otimização de Tempo e Esforço:** A pesquisa inicial para a Unity (Seção 8.1) detalhava a necessidade de aprender a contornar as limitações de áudio e de UI complexas. O desenvolvimento atual em JUCE demonstra que o tempo e o aprendizado estão sendo investidos diretamente na plataforma que será utilizada na entrega final do aplicativo, eliminando o retrabalho de migração. A implementação de carregamento de presets via JSON na Unity, por exemplo, seria um estudo que precisaria ser refeito em um framework de áudio nativo.
 
-### 10.4 Recomendação Estratégica para o Desenvolvimento
+### 10.5 Recomendação Estratégica para o Desenvolvimento
 
 Com base no progresso alcançado, nas capacidades intrínsecas do framework JUCE para aplicações de áudio e na otimização do plano de trabalho, **recomenda-se formalmente que o desenvolvimento do aplicativo PucPads continue sendo realizado integralmente na plataforma JUCE.**
 
@@ -530,4 +538,3 @@ Esta abordagem garante:
 * **Performance Inerente:** O requisito crítico de baixa latência e alta fidelidade de áudio é nativamente endereçado pelo JUCE, evitando desafios técnicos adicionais para alcançar padrões profissionais.
 * **Foco na Funcionalidade Musical:** Ao eliminar a necessidade de adaptar uma engine de jogos para uma aplicação de áudio, a equipe pode concentrar seus esforços na implementação das funcionalidades musicais avançadas (integração MIDI, efeitos, sequenciamento) e na experiência do usuário.
 * **Alinhamento com Padrões da Indústria:** O JUCE é amplamente utilizado na indústria de tecnologia musical para o desenvolvimento de plugins de áudio (VST/AU) e DAWs, posicionando o projeto PucPads em uma plataforma tecnicamente respeitável e preparada para futuras expansões.
-
