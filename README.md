@@ -464,3 +464,70 @@ Resumo técnico (foco em recursos da Unity):
      · Usar toque único para disparar sons nos pads.
 
      · Usar multitouch para suportar a performance com múltiplos dedos ao mesmo tempo.
+
+## 10. Relatório de Progresso e Direcionamento Técnico
+
+### 10.1 Progresso Alcançado com o Protótipo em JUCE (MVP – Outubro/2025)
+
+Em fase de prototipação inicial, a plataforma JUCE foi adotada para o desenvolvimento do MVP, com os seguintes marcos técnicos alcançados:
+
+* **Implementação de Pads Interativos:** Criada uma estrutura de componentes de pads dinâmicos, que reagem visualmente ao toque (mudança de cor) e emitem sons com baixa latência.
+* **Suporte a Multitouch:** A arquitetura de componentes do JUCE permite o reconhecimento e processamento de múltiplos toques simultâneos na tela, essencial para a performance musical.
+* **Configuração Dinâmica via JSON:** Os pads (quantidade, sons associados) são configurados através de um arquivo JSON externo, possibilitando a criação de "kits" personalizados sem necessidade de recompilação.
+    * Exemplo de configuração JSON:
+        ```json
+        {
+          "pads": [
+            { "note": "C", "audioFile": "C.mp3" },
+            { "note": "D", "audioFile": "D.mp3" },
+            // ... outros pads ...
+          ]
+        }
+        ```
+* **Arquitetura de Áudio Robusta:** Foi implementado um sistema de mixagem de áudio (`juce::MixerAudioSource`) no componente principal, garantindo a reprodução simultânea de múltiplos samples de forma eficiente e sem sobrecarga do sistema.
+* **Compatibilidade Mobile:** O protótipo foi compilado e testado com sucesso em um dispositivo Android real (via USB Debugging), confirmando a funcionalidade de toque, multitouch e performance de áudio no ambiente alvo.
+
+- [Vídeo demonstrativo](https://www.youtube.com/watch?v=lgqJpiOi8es)
+
+### 10.2 Progresso Alcançado com o Protótipo em Unity (MVP – Outubro/2025)
+
+Em uma fase exploratória inicial, a plataforma Unity foi utilizada para prototipar as funcionalidades centrais do aplicativo. O objetivo era validar a capacidade da engine de atender aos requisitos básicos do projeto. Os seguintes marcos foram alcançados:
+
+* **Sistema de Gerenciamento de Áudio:** Foi desenvolvido um sistema de AudioManager para centralizar e controlar a reprodução dos sons. Utilizou-se um padrão de instanciar dinamicamente um Prefab contendo um componente AudioSource para cada som disparado. O objeto era então destruído automaticamente ao final da reprodução do AudioClip, uma técnica para gerenciamento de recursos.
+
+* **Controle de Input Multiplataforma:** Implementado o Input System da Unity, criando uma base de controle que reconhece e responde a eventos tanto do mouse (para testes em desktop) quanto de toque único (single-touch) na tela.
+
+* **Implementação dos Pads Interativos:** Criada uma interface de usuário com componentes de pads, cada um contendo um script que referenciava um AudioClip específico. Ao receber um evento de input, o script do pad comunicava-se com o AudioManager para disparar o som correspondente.
+
+ - [Vídeo Demonstrativo](https://www.youtube.com/watch?v=NwCAiN9RlMc)
+
+### Próximos Passos e Limitações Identificadas
+Durante o desenvolvimento na Unity, os seguintes itens foram identificados como os próximos passos necessários para atingir a paridade com o protótipo em JUCE e os requisitos do MVP:
+
+* **Implementação de Multitouch:** O sistema atual responde a um único toque. A implementação de multitouch exigiria um desenvolvimento adicional para rastrear múltiplos fingerIds e gerenciar seus estados (Began, Ended) de forma independente.
+
+* **Configuração de Kits via JSON:** A configuração de sons nos pads foi feita manualmente, associando os AudioClips através do inspetor da Unity. O próximo grande passo seria desenvolver um sistema para ler arquivos JSON e popular a grade de pads dinamicamente.
+
+* **Feedback Visual:** A resposta visual dos pads ao toque (mudança de cor) ainda não havia sido implementada.
+
+* **Latência de Áudio:** Embora funcional, a latência do sistema de áudio padrão da Unity foi identificada como um ponto de atenção que necessitaria de testes aprofundados e possíveis otimizações, especialmente para o ambiente mobile.
+
+### 10.3 Análise Comparativa da Plataforma de Desenvolvimento (JUCE vs. Unity)
+
+Conforme o plano inicial de pesquisa, foram avaliadas as capacidades de ambas as plataformas para o desenvolvimento do protótipo e da versão final. A experiência prática com o JUCE revelou pontos cruciais que impactam a eficiência e a qualidade do projeto:
+
+* **Latência de Áudio:** O JUCE, sendo um framework nativo especializado em áudio, oferece controle direto sobre o hardware e uma arquitetura otimizada para baixíssima latência na reprodução de sons. Atingir o mesmo nível de responsividade na Unity exigiria soluções complexas e, possivelmente, a integração de plugins de áudio de terceiros, com resultados incertos em termos de performance e compatibilidade mobile.
+* **Tratamento de Áudio Multicanal e Polifonia:** A gestão de múltiplos `AudioSources` simultâneos, mixagem e aplicação de efeitos são funcionalidades nativas e altamente eficientes no JUCE. Na Unity, essa implementação demandaria um esforço considerável para otimizar o uso de recursos e evitar cortes (clipping) ou travamentos.
+* **Otimização de Tempo e Esforço:** A pesquisa inicial para a Unity (Seção 8.1) detalhava a necessidade de aprender a contornar as limitações de áudio e de UI complexas. O desenvolvimento atual em JUCE demonstra que o tempo e o aprendizado estão sendo investidos diretamente na plataforma que será utilizada na entrega final do aplicativo, eliminando o retrabalho de migração. A implementação de carregamento de presets via JSON na Unity, por exemplo, seria um estudo que precisaria ser refeito em um framework de áudio nativo.
+
+### 10.4 Recomendação Estratégica para o Desenvolvimento
+
+Com base no progresso alcançado, nas capacidades intrínsecas do framework JUCE para aplicações de áudio e na otimização do plano de trabalho, **recomenda-se formalmente que o desenvolvimento do aplicativo PucPads continue sendo realizado integralmente na plataforma JUCE.**
+
+Esta abordagem garante:
+
+* **Consistência e Estabilidade:** A base técnica já estabelecida é a mesma que será utilizada na versão final, garantindo um desenvolvimento contínuo e mais estável.
+* **Performance Inerente:** O requisito crítico de baixa latência e alta fidelidade de áudio é nativamente endereçado pelo JUCE, evitando desafios técnicos adicionais para alcançar padrões profissionais.
+* **Foco na Funcionalidade Musical:** Ao eliminar a necessidade de adaptar uma engine de jogos para uma aplicação de áudio, a equipe pode concentrar seus esforços na implementação das funcionalidades musicais avançadas (integração MIDI, efeitos, sequenciamento) e na experiência do usuário.
+* **Alinhamento com Padrões da Indústria:** O JUCE é amplamente utilizado na indústria de tecnologia musical para o desenvolvimento de plugins de áudio (VST/AU) e DAWs, posicionando o projeto PucPads em uma plataforma tecnicamente respeitável e preparada para futuras expansões.
+
