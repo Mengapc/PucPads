@@ -1,5 +1,5 @@
 # JUCE
-/[Bb]uilds/
+**/[Bb]uilds/
 .idea/
 
 # Visual Studio
