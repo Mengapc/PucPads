@@ -25,9 +25,8 @@ public:
     void resized() override;
 
 private:
-    //==============================================================================
-    // Your private member variables go here...
-    PadComponent myPad;
+	juce::MixerAudioSource mixerSource;
+	juce::OwnedArray<PadComponent> pads;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

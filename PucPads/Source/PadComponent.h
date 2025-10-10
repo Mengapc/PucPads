@@ -9,7 +9,7 @@
 class PadComponent  : public juce::Component // <<<<<<< A CORREÇÃO ESTÁ AQUI
 {
 public:
-    PadComponent();
+    PadComponent(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse);
     ~PadComponent() override;
 
     juce::AudioTransportSource& getTransportSource() { return transportSource; }
@@ -25,7 +25,7 @@ private:
     //Variavel para guardar estado do mouse
     bool isMouseDown = false;
 
-    void setupAudio(); // Função para organizar o carregamento do som
+    void setupAudio(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse); // Função para organizar o carregamento do som
     
     juce::AudioFormatManager formatManager;
     std::unique_ptr<juce::AudioFormatReaderSource> readerSource;

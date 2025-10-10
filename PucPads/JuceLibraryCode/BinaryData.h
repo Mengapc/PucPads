@@ -23,8 +23,11 @@ namespace BinaryData
     extern const char*   G_mp3;
     const int            G_mp3Size = 45822;
 
+    extern const char*   pads_config_json;
+    const int            pads_config_jsonSize = 336;
+
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 5;
+    const int namedResourceListSize = 6;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

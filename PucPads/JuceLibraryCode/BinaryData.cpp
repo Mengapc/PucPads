@@ -3230,6 +3230,35 @@ static const unsigned char temp_binary_data_4[] =
 
 const char* G_mp3 = (const char*) temp_binary_data_4;
 
+//================== pads_config.json ==================
+static const unsigned char temp_binary_data_5[] =
+"{\r\n"
+"  \"pads\": [\r\n"
+"    {\r\n"
+"      \"note\": \"C\",\r\n"
+"      \"audioFile\": \"C.mp3\"\r\n"
+"    },\r\n"
+"    {\r\n"
+"      \"note\": \"D\",\r\n"
+"      \"audioFile\": \"D.mp3\"\r\n"
+"    },\r\n"
+"    {\r\n"
+"      \"note\": \"E\",\r\n"
+"      \"audioFile\": \"E.mp3\"\r\n"
+"    },\r\n"
+"    {\r\n"
+"      \"note\": \"F\",\r\n"
+"      \"audioFile\": \"F.mp3\"\r\n"
+"    },\r\n"
+"    {\r\n"
+"      \"note\": \"G\",\r\n"
+"      \"audioFile\": \"G.mp3\"\r\n"
+"    }\r\n"
+"  ]\r\n"
+"}";
+
+const char* pads_config_json = (const char*) temp_binary_data_5;
+
 
 const char* getNamedResource (const char* resourceNameUTF8, int& numBytes);
 const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
@@ -3247,6 +3276,7 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
         case 0x03f92bf6:  numBytes = 45822; return E_mp3;
         case 0x04074377:  numBytes = 45822; return F_mp3;
         case 0x04155af8:  numBytes = 45822; return G_mp3;
+        case 0xf7663c46:  numBytes = 336; return pads_config_json;
         default: break;
     }
 
@@ -3260,7 +3290,8 @@ const char* namedResourceList[] =
     "D_mp3",
     "E_mp3",
     "F_mp3",
-    "G_mp3"
+    "G_mp3",
+    "pads_config_json"
 };
 
 const char* originalFilenames[] =
@@ -3269,7 +3300,8 @@ const char* originalFilenames[] =
     "D.mp3",
     "E.mp3",
     "F.mp3",
-    "G.mp3"
+    "G.mp3",
+    "pads_config.json"
 };
 
 const char* getNamedResourceOriginalFilename (const char* resourceNameUTF8);
