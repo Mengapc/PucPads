@@ -24,7 +24,7 @@ namespace BinaryData
     const int            G_mp3Size = 45822;
 
     extern const char*   pads_config_json;
-    const int            pads_config_jsonSize = 336;
+    const int            pads_config_jsonSize = 1029;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
     const int namedResourceListSize = 6;

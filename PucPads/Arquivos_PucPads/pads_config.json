@@ -19,6 +19,50 @@
     {
       "note": "G",
       "audioFile": "G.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "D",
+      "audioFile": "D.mp3"
+    },
+    {
+      "note": "E",
+      "audioFile": "E.mp3"
+    },
+    {
+      "note": "F",
+      "audioFile": "F.mp3"
+    },
+    {
+      "note": "G",
+      "audioFile": "G.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "D",
+      "audioFile": "D.mp3"
+    },
+    {
+      "note": "E",
+      "audioFile": "E.mp3"
+    },
+    {
+      "note": "F",
+      "audioFile": "F.mp3"
+    },
+    {
+      "note": "G",
+      "audioFile": "G.mp3"
+    },
+    {
+      "note": "G",
+      "audioFile": "G.mp3"
     }
   ]
 }
