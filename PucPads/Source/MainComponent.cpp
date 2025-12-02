@@ -3,12 +3,11 @@
 //==============================================================================
 MainComponent::MainComponent()
 {
-    // 1. Cria nossa tela de pads e passa o mixer para ela
-    padGridScreen = std::make_unique<PadGridComponent>(mixerSource);
-    // 2. Cria nossa tela de menu
+    // Cria nossa tela de menu
     menuScreen = std::make_unique<MenuComponent>();
-    // Registra o MainComponent como "ouvinte" do botão "start"
-    menuScreen->startButton.addListener(this);
+    // Registra o MainComponent como "ouvinte" dos botões
+    menuScreen->kitMelodiaButton.addListener(this);
+    menuScreen->kitBateriaButton.addListener(this);
     // Adiciona e torna o menu visível por padrão
     addAndMakeVisible(*menuScreen);
 
@@ -23,7 +22,8 @@ MainComponent::~MainComponent()
 {
     // Desliga o áudio e limpa os listeners
     shutdownAudio();
-    menuScreen->startButton.removeListener(this);
+    menuScreen->kitMelodiaButton.removeListener(this);
+    menuScreen->kitBateriaButton.removeListener(this);
 }
 
 //================== Funções de Áudio (continuam iguais)
@@ -53,28 +53,39 @@ void MainComponent::resized()
 {
     // Esta função agora posiciona qualquer tela que esteja visível
     // para preencher a janela inteira.
-    if (menuScreen != nullptr)
+    if (menuScreen != nullptr && menuScreen->isVisible())
         menuScreen->setBounds(getLocalBounds());
 
-    if (padGridScreen != nullptr)
+    if (padGridScreen != nullptr && menuScreen->isVisible())
         padGridScreen->setBounds(getLocalBounds());
 }
 
 //================== A LÓGICA DE NAVEGAÇÃO ==================
+
+// Uma nova função para encapsular a lógica de troca de tela
+void MainComponent::showPadScreen(juce::String kitFile)
+{
+    // 1. Esconde e remove o menu
+    menuScreen->setVisible(false);
+    removeChildComponent(menuScreen.get());
+
+    // 2. CRIA a tela de pads, passando o nome do kit
+    padGridScreen = std::make_unique<PadGridComponent>(mixerSource, kitFile);
+
+    // 3. Adiciona e torna a tela de pads visível
+    addAndMakeVisible(*padGridScreen);
+    padGridScreen->setBounds(getLocalBounds());
+}
+
 void MainComponent::buttonClicked(juce::Button* button)
 {
     // Verifica se o botão clicado foi o nosso "startButton"
-    if (button == &menuScreen->startButton)
+    if (button == &menuScreen->kitMelodiaButton)
     {
-        // 1. Esconde e remove o menu
-        menuScreen->setVisible(false);
-        removeChildComponent(menuScreen.get());
-
-        // 2. Adiciona e torna a tela de pads visível
-        addAndMakeVisible(*padGridScreen);
-
-        // 3. (Opcional) Força o padGrid a se redimensionar para
-        // caber na tela, ativando sua função resized()
-        padGridScreen->setBounds(getLocalBounds());
+        showPadScreen("notes_json");
+    }
+    else if (button == &menuScreen->kitBateriaButton)
+    {
+        showPadScreen("drumkit_json");
     }
 }

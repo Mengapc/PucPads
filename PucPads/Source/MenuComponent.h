@@ -12,8 +12,8 @@ public:
     void paint(juce::Graphics&) override;
     void resized() override;
 
-    // Tornamos o botão público para que o MainComponent possa "ouvi-lo"
-    juce::TextButton startButton;
+    juce::TextButton kitMelodiaButton;
+    juce::TextButton kitBateriaButton;
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MenuComponent)

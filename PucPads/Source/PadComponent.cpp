@@ -45,6 +45,7 @@ void PadComponent::mouseDown (const juce::MouseEvent& event)
 void PadComponent::mouseUp (const juce::MouseEvent& event)
 {
     isMouseDown = false;
+    transportSource.stop();
     repaint();
 }
 

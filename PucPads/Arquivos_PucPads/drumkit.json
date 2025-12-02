@@ -1,0 +1,69 @@
+{
+  "backingTrack": "Musica_Jogo.wav",
+  "pads": [
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    },
+    {
+      "note": "C",
+      "audioFile": "C.mp3"
+    }
+  ]
+}

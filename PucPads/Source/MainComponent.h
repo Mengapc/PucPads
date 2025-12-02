@@ -23,6 +23,7 @@ public:
     void resized() override;
 
     // Função que será chamada quando um botão for clicado
+    void showPadScreen(juce::String kitFile);
     void buttonClicked(juce::Button* button) override;
 
 private:

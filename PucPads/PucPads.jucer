@@ -4,6 +4,9 @@
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
   <MAINGROUP id="ePwT1J" name="PucPads">
     <GROUP id="{67364CA0-2BED-A7FC-EE38-73CA37AE7B14}" name="Source">
+      <FILE id="BwNHNJ" name="Musica_Jogo.wav" compile="0" resource="1" file="Arquivos_PucPads/Musica_Jogo.wav"/>
+      <FILE id="ME36Uu" name="drumkit.json" compile="0" resource="1" file="Arquivos_PucPads/drumkit.json"/>
+      <FILE id="sVv6F7" name="notes.json" compile="0" resource="1" file="Arquivos_PucPads/notes.json"/>
       <FILE id="pdN5bd" name="MenuComponent.cpp" compile="1" resource="0"
             file="Source/MenuComponent.cpp"/>
       <FILE id="fVuu0F" name="MenuComponent.h" compile="0" resource="0" file="Source/MenuComponent.h"/>
@@ -16,8 +19,6 @@
       <FILE id="cWQWYN" name="E.mp3" compile="0" resource="1" file="Arquivos_PucPads/E.mp3"/>
       <FILE id="BOvyXq" name="F.mp3" compile="0" resource="1" file="Arquivos_PucPads/F.mp3"/>
       <FILE id="l9ZZEA" name="G.mp3" compile="0" resource="1" file="Arquivos_PucPads/G.mp3"/>
-      <FILE id="niQ9AE" name="pads_config.json" compile="0" resource="1"
-            file="Arquivos_PucPads/pads_config.json"/>
       <FILE id="Owferc" name="PadComponent.cpp" compile="1" resource="0"
             file="Source/PadComponent.cpp"/>
       <FILE id="c8SCgT" name="PadComponent.h" compile="0" resource="0" file="Source/PadComponent.h"/>

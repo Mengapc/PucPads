@@ -4,9 +4,13 @@
 //==============================================================================
 MenuComponent::MenuComponent()
 {
-    startButton.setButtonText("Iniciar PucPads");
-    startButton.setColour(juce::TextButton::buttonColourId, juce::Colours::red);
-    addAndMakeVisible(startButton);
+    // Configura o primeiro botão
+    kitMelodiaButton.setButtonText(juce::String::fromUTF8("Kit Melodia (Dó-Ré-Mi)"));
+    addAndMakeVisible(kitMelodiaButton);
+
+    // Configura o segundo botão
+    kitBateriaButton.setButtonText("Kit Bateria");
+    addAndMakeVisible(kitBateriaButton);
 }
 
 MenuComponent::~MenuComponent()
@@ -20,5 +24,10 @@ void MenuComponent::paint(juce::Graphics& g)
 
 void MenuComponent::resized()
 {
-    startButton.setBounds(getLocalBounds().reduced(50).withSizeKeepingCentre(200, 50));
+    // Posiciona os botões um abaixo do outro
+    auto bounds = getLocalBounds().reduced(50); // Uma margem de 50
+
+    kitMelodiaButton.setBounds(bounds.removeFromTop(50));
+    bounds.removeFromTop(20); // Um espaço de 20px entre os botões
+    kitBateriaButton.setBounds(bounds.removeFromTop(50));
 }
