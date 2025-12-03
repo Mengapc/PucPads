@@ -498,8 +498,14 @@ Após a análise da Unity, a plataforma JUCE foi adotada para o desenvolvimento 
         {
           "backingTrack": "base_bateria.mp3",
           "pads": [
-            { "note": "C", "audioFile": "C.mp3" },
-            { "note": "D", "audioFile": "D.mp3" }
+            { "note": "C",
+              "audioFile": "C.mp3",
+              "color": "ffff0000"  // Cor Vermelha (ARGB)
+            },
+            { "note": "D",
+              "audioFile": "D.mp3",
+              "color": "ff00ff00"  // Cor Verde (ARGB)
+            }
           ]
         }
         ```
@@ -532,5 +538,11 @@ Com base no sucesso do MVP e na validação técnica, **recomenda-se formalmente
 
 Esta abordagem garante:
 1.  **Estabilidade e Performance:** Uso de uma ferramenta desenhada especificamente para áudio.
+2.  **Escalabilidade:** Facilidade para adicionar recursos futuros como efeitos (Reverb, Delay), gravação de áudio e integração MIDI avançada.
+3.  **Manutenibilidade:** Código C++ moderno, modular e separado da lógica visual de uma game engine.
+
+### Status Final do Projeto (Vídeo)
+Confira o funcionamento final do MVP com todas as funcionalidades integradas:
+- [**Assistir ao Vídeo do Status Final (YouTube Shorts)**](https://youtube.com/shorts/NXkurH1tSUU)
 2.  **Escalabilidade:** Facilidade para adicionar recursos futuros como efeitos (Reverb, Delay), gravação de áudio e integração MIDI avançada.
 3.  **Manutenibilidade:** Código C++ moderno, modular e separado da lógica visual de uma game engine.
