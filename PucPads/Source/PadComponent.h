@@ -9,7 +9,7 @@
 class PadComponent  : public juce::Component // <<<<<<< A CORREÇÃO ESTÁ AQUI
 {
 public:
-    PadComponent(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse);
+    PadComponent(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse, juce::Colour padColour);
     ~PadComponent() override;
 
     juce::AudioTransportSource& getTransportSource() { return transportSource; }
@@ -20,10 +20,14 @@ public:
     // Funções de evento do mouse
     void mouseDown (const juce::MouseEvent& event) override;
     void mouseUp (const juce::MouseEvent& event) override;
+    void mouseExit(const juce::MouseEvent& event) override;
     
 private:
     //Variavel para guardar estado do mouse
     bool isMouseDown = false;
+
+    // Variável para guardar a cor
+    juce::Colour activeColour;
 
     void setupAudio(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse); // Função para organizar o carregamento do som
     

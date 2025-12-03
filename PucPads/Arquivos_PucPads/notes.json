@@ -3,67 +3,83 @@
   "pads": [
     {
       "note": "C",
-      "audioFile": "C.mp3"
+      "audioFile": "C.mp3",
+      "color": "ffff0000" 
     },
     {
       "note": "D",
-      "audioFile": "D.mp3"
+      "audioFile": "D.mp3",
+      "color": "ff00ff00"
     },
     {
       "note": "E",
-      "audioFile": "E.mp3"
+      "audioFile": "E.mp3",
+      "color": "ff0000ff"
     },
     {
       "note": "F",
-      "audioFile": "F.mp3"
+      "audioFile": "F.mp3",
+      "color": "ffffff00"
     },
     {
       "note": "G",
-      "audioFile": "G.mp3"
+      "audioFile": "G.mp3",
+      "color": "ffff00ff"
     },
     {
       "note": "C",
-      "audioFile": "C.mp3"
+      "audioFile": "C.mp3",
+      "color": "ffff0000" 
     },
     {
       "note": "D",
-      "audioFile": "D.mp3"
+      "audioFile": "D.mp3",
+      "color": "ff00ff00"
     },
     {
       "note": "E",
-      "audioFile": "E.mp3"
+      "audioFile": "E.mp3",
+      "color": "ff0000ff"
     },
     {
       "note": "F",
-      "audioFile": "F.mp3"
+      "audioFile": "F.mp3",
+      "color": "ffffff00"
     },
     {
       "note": "G",
-      "audioFile": "G.mp3"
+      "audioFile": "G.mp3",
+      "color": "ffff00ff"
     },
     {
       "note": "C",
-      "audioFile": "C.mp3"
+      "audioFile": "C.mp3",
+      "color": "ffff0000" 
     },
     {
       "note": "D",
-      "audioFile": "D.mp3"
+      "audioFile": "D.mp3",
+      "color": "ff00ff00"
     },
     {
       "note": "E",
-      "audioFile": "E.mp3"
+      "audioFile": "E.mp3",
+      "color": "ff0000ff"
     },
     {
       "note": "F",
-      "audioFile": "F.mp3"
+      "audioFile": "F.mp3",
+      "color": "ffffff00"
     },
     {
       "note": "G",
-      "audioFile": "G.mp3"
+      "audioFile": "G.mp3",
+      "color": "ffff00ff"
     },
     {
       "note": "G",
-      "audioFile": "G.mp3"
+      "audioFile": "G.mp3",
+      "color": "ffff00ff"
     }
   ]
 }

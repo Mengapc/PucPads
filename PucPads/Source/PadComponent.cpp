@@ -2,7 +2,8 @@
 #include "PadComponent.h"
 
 //==============================================================================
-PadComponent::PadComponent(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse)
+PadComponent::PadComponent(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse, juce::Colour padColour)
+    : activeColour(padColour) // Inicializa a nossa variável de cor
 {
     setupAudio(soundData, soundDataSize, mixerToUse);
 }
@@ -13,19 +14,24 @@ PadComponent::~PadComponent()
 
 void PadComponent::paint (juce::Graphics& g)
 {
+    // Lógica principal: Decidir qual cor usar AGORA
+    juce::Colour corParaPintar;
+
     if (isMouseDown)
     {
-        g.fillAll (juce::Colours::yellow); // Cor Pressionado
+        // Se estiver apertado: Usa a cor ORIGINAL (brilhante)
+        corParaPintar = activeColour;
     }
     else
     {
-        g.fillAll (juce::Colours::black);  // Cor Não Pressionado  
+        // Se estiver solto: Usa a cor ESCURECIDA
+        corParaPintar = juce::Colours::black;
     }
-    
-    
-    // Borda do pad
-    g.setColour (juce::Colours::white);
-    g.drawRect (getLocalBounds(), 1); // getLocalBounds() pega o retângulo inteiro do componente.
+
+    g.fillAll(corParaPintar);
+    // Desenha uma borda arredondada bonita
+    g.setColour(juce::Colours::black.withAlpha(0.5f)); // Borda preta semi-transparente
+    g.drawRect(getLocalBounds(), 1);
 }
 
 void PadComponent::resized()
@@ -49,6 +55,15 @@ void PadComponent::mouseUp (const juce::MouseEvent& event)
     repaint();
 }
 
+void PadComponent::mouseExit(const juce::MouseEvent& event)
+{
+    if (isMouseDown)
+    {
+        isMouseDown = false;
+        // transportSource.stop(); // Se usar modo Gate
+        repaint();
+    }
+}
 
 void PadComponent::setupAudio(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse)
 {

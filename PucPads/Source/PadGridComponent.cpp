@@ -70,10 +70,16 @@ PadGridComponent::PadGridComponent(juce::MixerAudioSource& mixerToUse, juce::Str
                 int dataSize = 0;
                 const char* audioData = BinaryData::getNamedResource(resourceName.toUTF8(), dataSize);
 
+                // Lê a string hexadecimal do JSON (ex: "ffff0000")
+                juce::String colorString = padData["color"];
+
+                // Converte para um objeto Colour do JUCE
+                juce::Colour padColor = juce::Colour::fromString(colorString);
+
                 if (dataSize > 0)
                 {
                     DBG("... SUCESSO! Recurso " + resourceName + " encontrado. Criando o pad.");
-                    auto* newPad = pads.add(new PadComponent(audioData, dataSize, mixerSource));
+                    auto* newPad = pads.add(new PadComponent(audioData, dataSize, mixerSource, padColor));
                     addAndMakeVisible(newPad);
                 }
                 else
