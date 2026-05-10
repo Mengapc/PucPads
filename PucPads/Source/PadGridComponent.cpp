@@ -1,6 +1,6 @@
 #include <JuceHeader.h>
 #include "PadGridComponent.h"
-#include "PadComponent.h" // Precisamos incluir o PadComponent aqui!
+#include "PadComponent.h"
 
 //==============================================================================
 PadGridComponent::PadGridComponent(juce::MixerAudioSource& mixerToUse, juce::String kitFileToLoad)
@@ -53,6 +53,10 @@ PadGridComponent::PadGridComponent(juce::MixerAudioSource& mixerToUse, juce::Str
                 }
             }
         }
+        else 
+        {
+        DBG("ERRO FATAL: Falha ao interpretar o JSON. Verifique se ha virgulas faltando ou chaves incorretas!");
+        }
 
         if (obj->hasProperty("pads"))
         {
@@ -92,6 +96,17 @@ PadGridComponent::PadGridComponent(juce::MixerAudioSource& mixerToUse, juce::Str
     DBG("Processo de criacao finalizado. Total de pads criados: " + juce::String(pads.size()));
     DBG("--------------------------------------------------");
 
+    juce::Colour corFundoBotao = juce::Colour::fromString("ff420012"); // Bordô
+    juce::Colour corTextoBotao = juce::Colour::fromString("ffffd700"); // Dourado
+
+    // Configura o Play
+    playButton.setColour(juce::TextButton::buttonColourId, corFundoBotao);
+    playButton.setColour(juce::TextButton::textColourOffId, corTextoBotao);
+
+    // Configura o Stop
+    stopButton.setColour(juce::TextButton::buttonColourId, corFundoBotao);
+    stopButton.setColour(juce::TextButton::textColourOffId, corTextoBotao);
+
     addAndMakeVisible(playButton);
     addAndMakeVisible(stopButton);
 
@@ -106,26 +121,35 @@ PadGridComponent::~PadGridComponent()
 
 void PadGridComponent::paint(juce::Graphics& g)
 {
-    g.fillAll(juce::Colours::darkgrey);
+    // Fundo com um tom de Bordô (Burgundy) muito escuro e elegante
+    g.fillAll(juce::Colour::fromString("ff2a000b"));
 }
 
 void PadGridComponent::resized()
 {
-    // ----- LÓGICA DA GRADE 4x4 -----
     auto bounds = getLocalBounds();
 
-    auto headerArea = bounds.removeFromTop(50); // Reserva 50px no topo
-    playButton.setBounds(headerArea.removeFromLeft(100).reduced(5));
-    stopButton.setBounds(headerArea.removeFromLeft(100).reduced(5));
+    auto headerArea = bounds.removeFromTop(60);
 
-    const int numCols = 4;
-    const int numRows = 4;
-    int margin = 10;
+    // Criamos um retângulo no centro do cabeçalho para acomodar os dois botões
+    auto centerHeader = headerArea.withSizeKeepingCentre(220, 30);
+
+    playButton.setBounds(centerHeader.removeFromLeft(100));
+    centerHeader.removeFromLeft(20); // Espaço de 20px entre os botões
+    stopButton.setBounds(centerHeader.removeFromLeft(100));
+
+    const int numCols = 8;
+    const int numRows = 8;
+    int margin = 4;
 
     int totalMarginWidth = margin * (numCols + 1);
-    int padSize = (bounds.getWidth() - totalMarginWidth) / numCols;
-
-    if (padSize < 1) padSize = 1;
+    int totalMarginHeight = margin * (numRows + 1);
+    
+    int padWidth = (bounds.getWidth() - totalMarginWidth) / numCols;
+    int padHeight = (bounds.getHeight() - totalMarginHeight) / numRows;
+    
+    if (padWidth < 1) padWidth = 1;
+    if (padHeight < 1) padHeight = 1;
 
     int startY = bounds.getY();
 
@@ -137,9 +161,9 @@ void PadGridComponent::resized()
         if (row >= numRows)
             break;
 
-        int x = margin + (col * (padSize + margin));
-        int y = startY + margin + (row * (padSize + margin));
+        int x = margin + (col * (padWidth + margin));
+        int y = startY + margin + (row * (padHeight + margin));
 
-        pads[i]->setBounds(x, y, padSize, padSize);
+        pads[i]->setBounds(x, y, padWidth, padHeight);
     }
 }

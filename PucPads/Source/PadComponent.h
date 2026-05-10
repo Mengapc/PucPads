@@ -6,7 +6,7 @@
 /*
     Esta classe representa um único pad na nossa interface.
 */
-class PadComponent  : public juce::Component // <<<<<<< A CORREÇÃO ESTÁ AQUI
+class PadComponent  : public juce::Component, public juce::Timer
 {
 public:
     PadComponent(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse, juce::Colour padColour);
@@ -16,6 +16,7 @@ public:
     
     void paint (juce::Graphics&) override;
     void resized() override;
+    void timerCallback() override;
 
     // Funções de evento do mouse
     void mouseDown (const juce::MouseEvent& event) override;
@@ -25,6 +26,9 @@ public:
 private:
     //Variavel para guardar estado do mouse
     bool isMouseDown = false;
+
+    // Variável para controle de animação do brilho
+    float currentFade = 0.0f;
 
     // Variável para guardar a cor
     juce::Colour activeColour;

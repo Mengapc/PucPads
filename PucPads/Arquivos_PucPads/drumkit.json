@@ -2,84 +2,324 @@
   "backingTrack": "Musica_Jogo.wav",
   "pads": [
     {
-      "note": "C",
+      "note": "Pad_1",
       "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "color": "ffffd700"
     },
     {
-      "note": "C",
-      "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "note": "Pad_2",
+      "audioFile": "D.mp3",
+      "color": "ffffc107"
     },
     {
-      "note": "C",
-      "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "note": "Pad_3",
+      "audioFile": "E.mp3",
+      "color": "ffffffff"
     },
     {
-      "note": "C",
-      "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "note": "Pad_4",
+      "audioFile": "F.mp3",
+      "color": "ffffd700"
     },
     {
-      "note": "C",
-      "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "note": "Pad_5",
+      "audioFile": "G.mp3",
+      "color": "ffffc107"
     },
     {
-      "note": "C",
+      "note": "Pad_6",
       "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "color": "ffffd700"
     },
     {
-      "note": "C",
-      "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "note": "Pad_7",
+      "audioFile": "D.mp3",
+      "color": "ffffc107"
     },
     {
-      "note": "C",
-      "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "note": "Pad_8",
+      "audioFile": "E.mp3",
+      "color": "ffffffff"
     },
     {
-      "note": "C",
-      "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "note": "Pad_9",
+      "audioFile": "F.mp3",
+      "color": "ffffd700"
     },
     {
-      "note": "C",
-      "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "note": "Pad_10",
+      "audioFile": "G.mp3",
+      "color": "ffffc107"
     },
     {
-      "note": "C",
+      "note": "Pad_11",
       "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "color": "ffffd700"
     },
     {
-      "note": "C",
-      "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "note": "Pad_12",
+      "audioFile": "D.mp3",
+      "color": "ffffc107"
     },
     {
-      "note": "C",
-      "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "note": "Pad_13",
+      "audioFile": "E.mp3",
+      "color": "ffffffff"
     },
     {
-      "note": "C",
-      "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "note": "Pad_14",
+      "audioFile": "F.mp3",
+      "color": "ffffd700"
     },
     {
-      "note": "C",
-      "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "note": "Pad_15",
+      "audioFile": "G.mp3",
+      "color": "ffffc107"
     },
     {
-      "note": "C",
+      "note": "Pad_16",
+      "audioFile": "G.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_17",
       "audioFile": "C.mp3",
-      "color": "ffff0000"
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_18",
+      "audioFile": "D.mp3",
+      "color": "ffffffff"
+    },
+    {
+      "note": "Pad_19",
+      "audioFile": "E.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_20",
+      "audioFile": "F.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_21",
+      "audioFile": "G.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_22",
+      "audioFile": "C.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_23",
+      "audioFile": "D.mp3",
+      "color": "ffffffff"
+    },
+    {
+      "note": "Pad_24",
+      "audioFile": "E.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_25",
+      "audioFile": "F.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_26",
+      "audioFile": "G.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_27",
+      "audioFile": "C.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_28",
+      "audioFile": "D.mp3",
+      "color": "ffffffff"
+    },
+    {
+      "note": "Pad_29",
+      "audioFile": "E.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_30",
+      "audioFile": "F.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_31",
+      "audioFile": "G.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_32",
+      "audioFile": "G.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_33",
+      "audioFile": "C.mp3",
+      "color": "ffffffff"
+    },
+    {
+      "note": "Pad_34",
+      "audioFile": "D.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_35",
+      "audioFile": "E.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_36",
+      "audioFile": "F.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_37",
+      "audioFile": "G.mp3",
+      "color": "ffffffff"
+    },
+    {
+      "note": "Pad_38",
+      "audioFile": "C.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_39",
+      "audioFile": "D.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_40",
+      "audioFile": "E.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_41",
+      "audioFile": "F.mp3",
+      "color": "ffffffff"
+    },
+    {
+      "note": "Pad_42",
+      "audioFile": "G.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_43",
+      "audioFile": "C.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_44",
+      "audioFile": "D.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_45",
+      "audioFile": "E.mp3",
+      "color": "ffffffff"
+    },
+    {
+      "note": "Pad_46",
+      "audioFile": "F.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_47",
+      "audioFile": "G.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_48",
+      "audioFile": "G.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_49",
+      "audioFile": "C.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_50",
+      "audioFile": "D.mp3",
+      "color": "ffffffff"
+    },
+    {
+      "note": "Pad_51",
+      "audioFile": "E.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_52",
+      "audioFile": "F.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_53",
+      "audioFile": "G.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_54",
+      "audioFile": "C.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_55",
+      "audioFile": "D.mp3",
+      "color": "ffffffff"
+    },
+    {
+      "note": "Pad_56",
+      "audioFile": "E.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_57",
+      "audioFile": "F.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_58",
+      "audioFile": "G.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_59",
+      "audioFile": "C.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_60",
+      "audioFile": "D.mp3",
+      "color": "ffffffff"
+    },
+    {
+      "note": "Pad_61",
+      "audioFile": "E.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_62",
+      "audioFile": "F.mp3",
+      "color": "ffffc107"
+    },
+    {
+      "note": "Pad_63",
+      "audioFile": "G.mp3",
+      "color": "ffffd700"
+    },
+    {
+      "note": "Pad_64",
+      "audioFile": "G.mp3",
+      "color": "ffffffff"
     }
   ]
 }

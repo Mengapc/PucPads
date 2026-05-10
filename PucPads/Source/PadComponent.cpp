@@ -3,35 +3,31 @@
 
 //==============================================================================
 PadComponent::PadComponent(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse, juce::Colour padColour)
-    : activeColour(padColour) // Inicializa a nossa variável de cor
+    : activeColour(padColour)
 {
     setupAudio(soundData, soundDataSize, mixerToUse);
 }
 
 PadComponent::~PadComponent()
 {
+    stopTimer();
 }
 
 void PadComponent::paint (juce::Graphics& g)
 {
-    // Lógica principal: Decidir qual cor usar AGORA
-    juce::Colour corParaPintar;
+    juce::Colour corFundoInativo = juce::Colour::fromString("ff420012");
+    juce::Colour corBordaInativa = juce::Colour::fromString("ffb08d35");
 
-    if (isMouseDown)
-    {
-        // Se estiver apertado: Usa a cor ORIGINAL (brilhante)
-        corParaPintar = activeColour;
-    }
-    else
-    {
-        // Se estiver solto: Usa a cor ESCURECIDA
-        corParaPintar = juce::Colours::black;
-    }
+    // A MÁGICA DA COR: Mistura o fundo inativo com a cor Neon baseada no "currentFade"
+    juce::Colour corAtual = corFundoInativo.interpolatedWith(activeColour, currentFade);
 
-    g.fillAll(corParaPintar);
-    // Desenha uma borda arredondada bonita
-    g.setColour(juce::Colours::black.withAlpha(0.5f)); // Borda preta semi-transparente
-    g.drawRect(getLocalBounds(), 1);
+    g.fillAll(corAtual);
+
+    // Se o brilho estiver alto (> 0.8), a borda fica branca (estouro de luz)
+    // Se estiver diminuindo, a borda volta a ser dourada
+    g.setColour(currentFade > 0.8f ? juce::Colours::white : corBordaInativa);
+
+    g.drawRoundedRectangle(getLocalBounds().reduced(1).toFloat(), 4.0f, 1.5f);
 }
 
 void PadComponent::resized()
@@ -42,6 +38,10 @@ void PadComponent::mouseDown (const juce::MouseEvent& event)
 {
     isMouseDown = true;
     
+    // Força o brilho para o máximo instantaneamente
+    currentFade = 1.0f;
+    stopTimer();
+
     transportSource.setPosition(0); // Rebobina o som para o início
     transportSource.start();          // Toca o som
     
@@ -51,6 +51,10 @@ void PadComponent::mouseDown (const juce::MouseEvent& event)
 void PadComponent::mouseUp (const juce::MouseEvent& event)
 {
     isMouseDown = false;
+    
+    // Inicia a animação a 60 quadros por segundo (60 Hz)
+    startTimerHz(60);
+    
     transportSource.stop();
     repaint();
 }
@@ -85,4 +89,18 @@ void PadComponent::setupAudio(const char* soundData, int soundDataSize, juce::Mi
     {
         DBG("ERRO: Falha ao carregar o arquivo de áudio!");
     }
+}
+
+void PadComponent::timerCallback()
+{
+    // Reduz o brilho (0.05 por frame = fade rápido. Mude para 0.02 para fade lento)
+    currentFade -= 0.05f;
+
+    if (currentFade <= 0.0f)
+    {
+        currentFade = 0.0f; // Trava no zero
+        stopTimer();        // Desliga o timer para economizar CPU
+    }
+
+    repaint(); // Pede para desenhar a nova cor intermediária
 }
