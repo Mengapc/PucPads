@@ -546,3 +546,37 @@ Confira o funcionamento final do MVP com todas as funcionalidades integradas:
 - [**Assistir ao Vídeo do Status Final (YouTube Shorts)**](https://youtube.com/shorts/NXkurH1tSUU)
 2.  **Escalabilidade:** Facilidade para adicionar recursos futuros como efeitos (Reverb, Delay), gravação de áudio e integração MIDI avançada.
 3.  **Manutenibilidade:** Código C++ moderno, modular e separado da lógica visual de uma game engine.
+  
+## 11. Requisitos do Sistema e Configuração do Ambiente
+
+Para garantir a compilação correta do projeto PucPads, é necessário configurar o ambiente de desenvolvimento com as versões e ferramentas especificadas abaixo.
+
+### 11.1 Ferramentas e Versões Necessárias
+
+* **Framework de Áudio:** JUCE (Versão 8.0.10 ou superior)
+* **IDE (Windows):** Visual Studio 2022
+    * *Carga de trabalho necessária:* "Desenvolvimento para Desktop com C++" (Desktop development with C++).
+    * *Componentes essenciais:* MSVC v143 (ou mais recente) e Windows 10/11 SDK.
+* **IDE (Mobile):** Android Studio (Versão Jellyfish/Iguana ou mais recente)
+    * *SDK:* Android SDK Platform 34 (ou a versão mais recente exigida pelo Google Play).
+    * *NDK:* Side by side (Geralmente a versão recomendada pelo Projucer, ex: 26.x ou 27.x).
+    * *Ferramentas de Build:* CMake e Android SDK Build-Tools.
+
+### 11.2 Passos para Configuração (Desktop/Windows)
+
+1.  Faça o download do JUCE e extraia em um diretório de fácil acesso (ex: `C:\JUCE`).
+2.  Abra o aplicativo **Projucer** (localizado na pasta do JUCE).
+3.  No Projucer, abra o arquivo `PucPads.jucer` localizado na raiz do projeto.
+4.  Vá em `Global Paths` (no menu do Projucer) e verifique se os caminhos para o JUCE Modules estão corretos.
+5.  Clique no ícone do seu Exportador (Visual Studio 2022) e depois no botão "Save and Open in IDE" (ou clique no ícone do VS).
+
+### 11.3 Passos para Configuração (Android)
+
+1.  Instale o Android Studio e, pelo SDK Manager, baixe o NDK (Side by side) e o CMake.
+2.  Abra o arquivo `PucPads.jucer` no Projucer.
+3.  Vá na aba do exportador **Android**.
+4.  Configure os caminhos do SDK e NDK nas configurações globais do Projucer (`File > Global Paths`).
+    * *Caminho típico SDK (Windows):* `C:\Users\SEU_USUARIO\AppData\Local\Android\Sdk`
+    * *Caminho típico NDK (Windows):* `C:\Users\SEU_USUARIO\AppData\Local\Android\Sdk\ndk\VERSAO`
+5.  Salve o projeto no Projucer. Ele gerará os arquivos do Gradle na pasta `Builds/Android`.
+6.  Abra a pasta `Builds/Android` através do Android Studio, conecte seu dispositivo (com Depuração USB ativada) e execute o build.
