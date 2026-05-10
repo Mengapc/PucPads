@@ -223,11 +223,11 @@ Esta seção documenta o histórico de pesquisas estruturais e as decisões de e
 
 Em uma fase inicial, a plataforma Unity foi utilizada para prototipar as funcionalidades centrais do aplicativo. O objetivo era validar a capacidade da engine de atender aos requisitos básicos do projeto.
 
-**· Conquistas:** Implementação de ```AudioManager``` básico, Input System (mouse/touch) e interface visual de pads interativos.
+* **Conquistas:** Implementação de ```AudioManager``` básico, Input System (mouse/touch) e interface visual de pads interativos.
 
-**· Limitações Identificadas**: A latência nativa do sistema de áudio padrão mostrou-se um ponto de atenção crítico para a performance musical no Android. A implementação robusta de multitouch e a gestão de recursos (Garbage Collection via instanciação de GameObjects para áudio) indicaram alto risco de gargalos no mobile.
+* **Limitações Identificadas**: A latência nativa do sistema de áudio padrão mostrou-se um ponto de atenção crítico para a performance musical no Android. A implementação robusta de multitouch e a gestão de recursos (Garbage Collection via instanciação de GameObjects para áudio) indicaram alto risco de gargalos no mobile.
 
-**Vídeo Demonstrativo:**
+* **Vídeo Demonstrativo:**
 
 - [Assistir ao Vídeo do Protótipo Unity (YouTube Shorts)](https://www.youtube.com/watch?v=NwCAiN9RlMc)
 
@@ -235,23 +235,21 @@ Em uma fase inicial, a plataforma Unity foi utilizada para prototipar as funcion
 
 A decisão de transicionar para o JUCE foi fundamentada na necessidade de performance de áudio em tempo real. Enquanto a Unity exigiria contornos técnicos (workarounds) para gerenciar latência e polifonia, o JUCE oferece essas capacidades nativamente, sendo o padrão da indústria para software de áudio.
 
-**· Arquitetura de Áudio Profissional:** Uso de ```juce::MixerAudioSource``` garantindo polifonia e latência mínima em ritmo e percussão.
+* **Arquitetura de Áudio Profissional:** Uso de ```juce::MixerAudioSource``` garantindo polifonia e latência mínima em ritmo e percussão.
 
-**· Matriz 8x8 e Backing Tracks:** Reestruturação da grade de performance para o padrão de 64 pads com ocupação dinâmica de tela ```(resized())``` e player dedicado para faixas de base.
+* **Matriz 8x8 e Backing Tracks:** Reestruturação da grade de performance para o padrão de 64 pads com ocupação dinâmica de tela ```(resized())``` e player dedicado para faixas de base.
 
-**· Configuração Dinâmica (JSON):** Leitura de arquivos JSON externos para configurar automaticamente quantidade de pads, arquivos de áudio associados e cores em hexadecimal (ARGB), permitindo criar kits sem recompilação.
+* **Configuração Dinâmica (JSON):** Leitura de arquivos JSON externos para configurar automaticamente quantidade de pads, arquivos de áudio associados e cores em hexadecimal (ARGB), permitindo criar kits sem recompilação.
     * Exemplo de estrutura implementada:
         ```
         {
-       "backingTrack": "Musica_Jogo.wav",
+         "backingTrack": "Musica_Jogo.wav",
          "pads": [
-           {
-              "note": "Pad_1",
+           {  "note": "Pad_1",
               "audioFile": "C.mp3",
               "color": "ffffd700"
            },
-           {
-              "note": "Pad_2",
+           {  "note": "Pad_2",
               "audioFile": "D.mp3",
               "color": "ffffc107"
            }  
@@ -259,11 +257,11 @@ A decisão de transicionar para o JUCE foi fundamentada na necessidade de perfor
         }
         ```
 
-**· Identidade Visual e Feedback:** Implementação de Dark Mode na paleta institucional (Bordô/Dourado) e classe ```juce::Timer``` para animações táteis suaves de fade-out nos pads (60 FPS).
+* **Identidade Visual e Feedback:** Implementação de Dark Mode na paleta institucional (Bordô/Dourado) e classe ```juce::Timer``` para animações táteis suaves de fade-out nos pads (60 FPS).
 
-**· Suporte Mobile Comprovado:** Compilação final e testes bem sucedidos em hardware Android via USB Debugging com multitouch perfeito.
+* **Suporte Mobile Comprovado:** Compilação final e testes bem sucedidos em hardware Android via USB Debugging com multitouch perfeito.
 
-**Status Final do MVP:**
+* **Status Final do MVP:**
 
 - [Assistir ao Vídeo do Status Final (YouTube Shorts)](https://youtube.com/shorts/NXkurH1tSUU)
 
@@ -560,101 +558,3 @@ Resumo técnico (foco em recursos da Unity):
      · Usar toque único para disparar sons nos pads.
 
      · Usar multitouch para suportar a performance com múltiplos dedos ao mesmo tempo.
-
-## 10. Relatório de Progresso e Direcionamento Técnico
-
-### 10.2 Progresso Alcançado com o Protótipo em JUCE (MVP – Outubro/2025)
-
-Após a análise da Unity, a plataforma JUCE foi adotada para o desenvolvimento do MVP, resultando em um protótipo funcional e de alta performance. Os seguintes marcos técnicos foram atingidos:
-
-* **Arquitetura de Áudio Profissional:** Implementado um sistema de mixagem (`juce::MixerAudioSource`) que garante a reprodução simultânea de múltiplos sons (polifonia) e música de fundo sem cortes ou latência perceptível.
-* **Execução de Música de Fundo (Backing Tracks):** Implementado um player dedicado para faixas de base, com controles de Play/Stop independentes dos pads, permitindo o acompanhamento musical conforme o escopo do projeto.
-* **Sistema de Navegação e Menus:** Desenvolvida uma arquitetura de gerenciamento de telas (`MainComponent` como gerenciador), permitindo a navegação fluida entre o Menu Principal e a Grade de Performance.
-* **Configuração Dinâmica de Kits (JSON):** O aplicativo lê arquivos JSON externos para configurar automaticamente a quantidade de pads, os sons associados (`.mp3`/`.wav`) e as faixas de fundo, permitindo a criação de novos kits sem recompilar o código.
-    * Exemplo de estrutura implementada:
-        ```
-        {
-          "backingTrack": "base_bateria.mp3",
-          "pads": [
-            { "note": "C",
-              "audioFile": "C.mp3",
-              "color": "ffff0000"  // Cor Vermelha (ARGB)
-            },
-            { "note": "D",
-              "audioFile": "D.mp3",
-              "color": "ff00ff00"  // Cor Verde (ARGB)
-            }
-          ]
-        }
-        ```
-* **Suporte Nativo a Multitouch:** A arquitetura de componentes do JUCE permitiu o reconhecimento imediato de múltiplos toques simultâneos no Android.
-* **Compatibilidade Mobile Comprovada:** O protótipo foi compilado e testado com sucesso em dispositivo Android real (via USB Debugging), validando a performance e a estabilidade.
-
-- [Vídeo Demonstrativo do Protótipo JUCE](https://www.youtube.com/watch?v=lgqJpiOi8es)
-
----
-
-### 10.3 Justificativa para a Transição de Plataforma (Unity para JUCE)
-
-Inicialmente, a Unity foi considerada devido à familiaridade no desenvolvimento de interfaces. Contudo, a experiência prática revelou diferenças significativas em relação aos requisitos de um instrumento musical virtual.
-
-A decisão de transicionar para o JUCE foi fundamentada na necessidade de **performance de áudio em tempo real**. Enquanto a Unity exigiria contornos técnicos (workarounds) para gerenciar latência e polifonia, o JUCE oferece essas capacidades nativamente, sendo o padrão da indústria para software de áudio. Essa mudança estratégica redirecionou o esforço de desenvolvimento: de "resolver problemas da engine" para "implementar funcionalidades musicais".
-
----
-
-### 10.4 Análise Comparativa da Plataforma de Desenvolvimento (JUCE vs. Unity)
-
-* **Latência de Áudio:** O JUCE oferece controle direto sobre o buffer de áudio do hardware, resultando em latência mínima essencial para ritmo e percussão. Na Unity, atingir latência similar em Android é complexo e instável.
-* **Fluxo de Trabalho:** O JUCE facilita a manipulação de dados binários e áudio (como o carregamento de JSON e samples em memória) de forma mais eficiente para este domínio do que o sistema de Assets da Unity.
-* **Otimização de Tempo:** O conhecimento adquirido em JUCE é diretamente aplicável à versão final do produto e a futuros desenvolvimentos de plugins VST/AU, agregando valor profissional ao projeto e aos alunos envolvidos.
-
----
-
-### 10.5 Recomendação Estratégica para o Desenvolvimento
-
-Com base no sucesso do MVP e na validação técnica, **recomenda-se formalmente que o desenvolvimento do aplicativo PucPads continue sendo realizado integralmente na plataforma JUCE.**
-
-Esta abordagem garante:
-1.  **Estabilidade e Performance:** Uso de uma ferramenta desenhada especificamente para áudio.
-2.  **Escalabilidade:** Facilidade para adicionar recursos futuros como efeitos (Reverb, Delay), gravação de áudio e integração MIDI avançada.
-3.  **Manutenibilidade:** Código C++ moderno, modular e separado da lógica visual de uma game engine.
-
-### Status Final do Projeto (Vídeo)
-Confira o funcionamento final do MVP com todas as funcionalidades integradas:
-- [**Assistir ao Vídeo do Status Final (YouTube Shorts)**](https://youtube.com/shorts/NXkurH1tSUU)
-2.  **Escalabilidade:** Facilidade para adicionar recursos futuros como efeitos (Reverb, Delay), gravação de áudio e integração MIDI avançada.
-3.  **Manutenibilidade:** Código C++ moderno, modular e separado da lógica visual de uma game engine.
-  
-## 11. Requisitos do Sistema e Configuração do Ambiente
-
-Para garantir a compilação correta do projeto PucPads, é necessário configurar o ambiente de desenvolvimento com as versões e ferramentas especificadas abaixo.
-
-### 11.1 Ferramentas e Versões Necessárias
-
-* **Framework de Áudio:** JUCE (Versão 8.0.10 ou superior)
-* **IDE (Windows):** Visual Studio 2022
-    * *Carga de trabalho necessária:* "Desenvolvimento para Desktop com C++" (Desktop development with C++).
-    * *Componentes essenciais:* MSVC v143 (ou mais recente) e Windows 10/11 SDK.
-* **IDE (Mobile):** Android Studio (Versão Jellyfish/Iguana ou mais recente)
-    * *SDK:* Android SDK Platform 34 (ou a versão mais recente exigida pelo Google Play).
-    * *NDK:* Side by side (Geralmente a versão recomendada pelo Projucer, ex: 26.x ou 27.x).
-    * *Ferramentas de Build:* CMake e Android SDK Build-Tools.
-
-### 11.2 Passos para Configuração (Desktop/Windows)
-
-1.  Faça o download do JUCE e extraia em um diretório de fácil acesso (ex: `C:\JUCE`).
-2.  Abra o aplicativo **Projucer** (localizado na pasta do JUCE).
-3.  No Projucer, abra o arquivo `PucPads.jucer` localizado na raiz do projeto.
-4.  Vá em `Global Paths` (no menu do Projucer) e verifique se os caminhos para o JUCE Modules estão corretos.
-5.  Clique no ícone do seu Exportador (Visual Studio 2022) e depois no botão "Save and Open in IDE" (ou clique no ícone do VS).
-
-### 11.3 Passos para Configuração (Android)
-
-1.  Instale o Android Studio e, pelo SDK Manager, baixe o NDK (Side by side) e o CMake.
-2.  Abra o arquivo `PucPads.jucer` no Projucer.
-3.  Vá na aba do exportador **Android**.
-4.  Configure os caminhos do SDK e NDK nas configurações globais do Projucer (`File > Global Paths`).
-    * *Caminho típico SDK (Windows):* `C:\Users\SEU_USUARIO\AppData\Local\Android\Sdk`
-    * *Caminho típico NDK (Windows):* `C:\Users\SEU_USUARIO\AppData\Local\Android\Sdk\ndk\VERSAO`
-5.  Salve o projeto no Projucer. Ele gerará os arquivos do Gradle na pasta `Builds/Android`.
-6.  Abra a pasta `Builds/Android` através do Android Studio, conecte seu dispositivo (com Depuração USB ativada) e execute o build.
