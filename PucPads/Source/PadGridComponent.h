@@ -14,6 +14,7 @@ public:
     void paint(juce::Graphics&) override;
     void resized() override;
 
+    juce::TextButton backButton{ " < " };
 private:
     // O array de pads agora vive aqui!
     juce::OwnedArray<PadComponent> pads;

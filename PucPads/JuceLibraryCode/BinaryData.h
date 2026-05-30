@@ -8,15 +8,6 @@
 
 namespace BinaryData
 {
-    extern const char*   Musica_Jogo_wav;
-    const int            Musica_Jogo_wavSize = 13850638;
-
-    extern const char*   drumkit_json;
-    const int            drumkit_jsonSize = 6194;
-
-    extern const char*   notes_json;
-    const int            notes_jsonSize = 6194;
-
     extern const char*   C_mp3;
     const int            C_mp3Size = 45822;
 
@@ -31,6 +22,15 @@ namespace BinaryData
 
     extern const char*   G_mp3;
     const int            G_mp3Size = 45822;
+
+    extern const char*   Musica_Jogo_wav;
+    const int            Musica_Jogo_wavSize = 13850638;
+
+    extern const char*   drumkit_json;
+    const int            drumkit_jsonSize = 6194;
+
+    extern const char*   notes_json;
+    const int            notes_jsonSize = 6194;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
     const int namedResourceListSize = 8;

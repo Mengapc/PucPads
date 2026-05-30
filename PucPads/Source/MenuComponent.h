@@ -14,6 +14,9 @@ public:
 
     juce::TextButton kitMelodiaButton;
     juce::TextButton kitBateriaButton;
+    
+    // NOVO BOTÃO: Para acessar a tela de mixer e configurações
+    juce::TextButton settingsButton;
 
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MenuComponent)

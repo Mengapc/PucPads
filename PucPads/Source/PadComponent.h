@@ -24,6 +24,8 @@ public:
     void mouseExit(const juce::MouseEvent& event) override;
     
 private:
+    juce::MixerAudioSource& mixerRef;
+    
     //Variavel para guardar estado do mouse
     bool isMouseDown = false;
 

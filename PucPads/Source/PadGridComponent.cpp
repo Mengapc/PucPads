@@ -107,6 +107,11 @@ PadGridComponent::PadGridComponent(juce::MixerAudioSource& mixerToUse, juce::Str
     stopButton.setColour(juce::TextButton::buttonColourId, corFundoBotao);
     stopButton.setColour(juce::TextButton::textColourOffId, corTextoBotao);
 
+    // Configura o Voltar
+    backButton.setColour(juce::TextButton::buttonColourId, juce::Colour::fromString("ff420012")); // Bordô
+    backButton.setColour(juce::TextButton::textColourOffId, juce::Colour::fromString("ffffd700")); // Dourado
+    
+    addAndMakeVisible(backButton);
     addAndMakeVisible(playButton);
     addAndMakeVisible(stopButton);
 
@@ -131,12 +136,14 @@ void PadGridComponent::resized()
 
     auto headerArea = bounds.removeFromTop(60);
 
+    backButton.setBounds(headerArea.removeFromLeft(60).reduced(10));
     // Criamos um retângulo no centro do cabeçalho para acomodar os dois botões
     auto centerHeader = headerArea.withSizeKeepingCentre(220, 30);
-
     playButton.setBounds(centerHeader.removeFromLeft(100));
-    centerHeader.removeFromLeft(20); // Espaço de 20px entre os botões
+    centerHeader.removeFromLeft(20);
     stopButton.setBounds(centerHeader.removeFromLeft(100));
+
+	auto footerArea = bounds.removeFromBottom(70);
 
     const int numCols = 8;
     const int numRows = 8;

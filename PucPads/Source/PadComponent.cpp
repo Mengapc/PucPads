@@ -3,14 +3,18 @@
 
 //==============================================================================
 PadComponent::PadComponent(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse, juce::Colour padColour)
-    : activeColour(padColour)
+    : mixerRef(mixerToUse)
+    
 {
+    activeColour = padColour;
     setupAudio(soundData, soundDataSize, mixerToUse);
 }
 
 PadComponent::~PadComponent()
 {
     stopTimer();
+
+    mixerRef.removeInputSource(&transportSource);
 }
 
 void PadComponent::paint (juce::Graphics& g)
