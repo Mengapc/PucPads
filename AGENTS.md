@@ -386,6 +386,14 @@ Siga de perto o **estilo padrão do JUCE** (é o que o projeto usa):
 3. Salve para gerar o Gradle em `Builds/Android`, abra a pasta no Android Studio, conecte o
    dispositivo com Depuração USB e execute o build.
 
+> ⚠️ **Caminho do projeto tem que ser ASCII.** Com acento/cedilha no caminho (ex.:
+> `D:\Projetos\Programação\PucPads`), o Android Gradle Plugin aborta a avaliação de `:app` com
+> `Your project path contains non-ASCII characters`. Não é erro de código e nenhum ajuste em
+> `Source/` resolve — o build nem começa. Correções, com prós e contras, em
+> [`README.md`](README.md) §5.4. Depois de mover a pasta, apague `Builds/Android/.gradle`,
+> `app/.cxx`, `app/build` e `local.properties` (guardam caminhos absolutos antigos).
+
+
 > ⚠️ **MODULEPATHS inconsistentes no `.jucer`:** nos dois exportadores (VS2022 e Android), quase
 > todos os módulos apontam para `../../../Software/JUCE/modules`, mas
 > `juce_audio_processors_headless` aponta para `../../../../Softwares/Faculdade/JUCE/modules`

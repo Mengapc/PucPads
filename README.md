@@ -106,9 +106,39 @@ O diagrama de interface ilustra o *storyboard* de navegação em *Dark Mode*, es
 3. Selecione o exportador **Visual Studio 2022** e clique em *Save and Open in IDE*.
 
 ### 5.3 Configuração Mobile (Android)
-1. No Android Studio (SDK Manager), instale o **NDK (Side by side)** e o **CMake**.
-2. No Projucer, configure os caminhos do SDK e NDK em `File > Global Paths`.
-3. Salve o projeto para gerar os arquivos Gradle em `Builds/Android`, abra a pasta no Android Studio e execute o build via Depuração USB.
+1. Garanta que o projeto esteja em um **caminho somente ASCII** (veja §5.4 — o Gradle aborta a configuração caso contrário).
+2. No Android Studio (SDK Manager), instale o **NDK (Side by side)** e o **CMake**.
+3. No Projucer, configure os caminhos do SDK e NDK em `File > Global Paths`.
+4. Salve o projeto para gerar os arquivos Gradle em `Builds/Android`, abra a pasta no Android Studio e execute o build via Depuração USB.
+
+### 5.4 Requisito de caminho do projeto (Windows)
+
+> ⚠️ **O caminho do projeto não pode conter caracteres não-ASCII** (acentos, cedilha, `ç`, `ã`, espaços exóticos).
+> O Android Gradle Plugin interrompe a avaliação de `:app` com:
+> `Your project path contains non-ASCII characters. This will most likely cause the build to fail on Windows.`
+> O erro é do **ambiente**, não do código: o build não chega a compilar nada.
+
+O `build.gradle` é regenerado pelo Projucer, e o `Builds/Android/gradle.properties` também — o Projucer
+reescreve esse arquivo a cada *Save* com apenas `android.useAndroidX=true`. Ou seja, editar esse arquivo
+não é correção durável.
+
+| Opção | Como fazer | Durável? | Risco |
+| :--- | :--- | :--- | :--- |
+| **A (recomendada)** | Mover/renomear a pasta do projeto para um caminho ASCII, ex.: `D:\Projetos\Programacao\PucPads` | ✅ sim | Exige limpar caches e reabrir a pasta no Android Studio |
+| **B** | Criar uma *junction* ASCII e abrir o projeto por ela: `mklink /J D:\Projetos\PucPads "D:\Projetos\Programação\PucPads"` → abrir `D:\Projetos\PucPads\PucPads\Builds\Android` | ✅ sim, sem mover arquivos | Algumas ferramentas resolvem o caminho real (com acento) e o erro volta |
+| **C** | `android.overridePathCheck=true` em `Builds/Android/gradle.properties` | ❌ não (o Projucer apaga no próximo *Save*) | Serve só para teste rápido |
+| **D** | Mesma linha em `%USERPROFILE%\.gradle\gradle.properties` | ✅ sim (vale para toda a máquina) | Desliga a checagem em **todos** os projetos; o build pode falhar depois no NDK/aapt2 |
+
+Após mover o projeto (opção A), descarte os caches gerados no caminho antigo — eles guardam caminhos absolutos:
+
+```bat
+cd /d D:\Projetos\Programacao\PucPads\PucPads\Builds\Android
+rmdir /s /q .gradle app\.cxx app\build
+del /q local.properties
+```
+
+No Android Studio, use `File > Invalidate Caches / Restart` e reabra a pasta `Builds\Android` pelo **novo**
+caminho (o atalho de projeto recente continua apontando para o antigo).
 
 ---
 
