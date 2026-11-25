@@ -81,8 +81,8 @@ O sistema é estruturado de forma modular sobre o framework **JUCE 8.0.10**:
 ### 4.2 Fluxo de Interface e Navegação
 O diagrama de interface ilustra o *storyboard* de navegação em *Dark Mode*, estruturado em três telas principais interconectadas:
 
-- **Menu Principal (Esquerda):** Porta de entrada do aplicativo, com acesso rápido aos kits disponíveis, biblioteca, painel de configurações/mixer e informações do projeto.
-- **Grade de Performance (Centro):** Núcleo interativo do instrumento virtual com matriz 8x8, controles de transporte da *backing track* e botão de retorno no cabeçalho, além de barra inferior reservada para navegação entre páginas de pads.
+- **Menu Principal (Esquerda):** Porta de entrada introdutória do aplicativo, com acesso à tela de performance (*Launch Pad*) e ao painel de configurações/mixer.
+- **Launch Pad (Centro):** Tela **única** de performance do instrumento virtual: matriz 8x8 responsiva, controles de transporte da *backing track* e botão de retorno no cabeçalho. O rodapé traz **8 botões de template** — cada um abre uma configuração diferente de Launch Pad, que o usuário poderá editar adiante.
 - **Configurações e Mixagem (Direita):** Painel para ajustes técnicos avançados, faders independentes para controle de ganho, ajustes de parâmetros dos pads e controles de gravação/reprodução.
 
 <img width="1920" height="1080" alt="Settings" src="https://github.com/user-attachments/assets/fb29c16e-c7ae-49fe-a794-8cbd728a7e4d" />
@@ -121,14 +121,14 @@ O diagrama de interface ilustra o *storyboard* de navegação em *Dark Mode*, es
 - [x] Grade responsiva 8x8 (64 pads) com feedback visual de decaimento suave a 60 FPS (`juce::Timer`).
 - [x] Arquitetura de navegação entre telas (Menu Principal, Grade de Performance e Configurações/Mixer) com gerenciamento determinístico de memória.
 - [x] Compilação e validação de *multitouch* e baixa latência em dispositivo Android real.
+- [x] Tela única de *Launch Pad* com **8 templates** no rodapé (kits como templates) e navegação de páginas por kit.
+- [x] Grupos de exclusão (*choke groups*) ilimitados com *fade-out* curto, lidos do JSON.
 
 ### 6.2 Próximos Passos Técnicos (Sprints em Planejamento)
-- **Navegação Multi-páginas e Semântica de Cores:**
-  - Implementar botões na margem inferior da `PadGridComponent` para alternar entre diferentes bancos/páginas de pads na mesma música.
-  - Atualizar os kits padrão para refletir o código de cores pedagógico (Verde: Efeitos, Azul: Loop, Rosa: Melodia, Laranja: Harmonia).
-- **Motor de Grupos de Exclusão (Choke Groups):**
-  - Implementar sistema dinâmico de grupos no gerenciador de pads, permitindo número ilimitado de grupos (superando o limite de 6 grupos do concorrente).
-  - Aplicar *fade-out* rápido (ex.: 15–30 ms) no sample anterior sempre que um novo pad do mesmo grupo for acionado, evitando artefatos de áudio (*clicks*).
+- **Templates de Launch Pad e Navegação:**
+  - Preencher os templates 2–8 com kits próprios (hoje apenas o template 1 tem JSON; os demais abrem uma grade vazia).
+  - Extrair a lista de templates do código para um manifesto JSON/preferências quando houver edição pelo usuário.
+- **Semântica de Cores (RF04):** os kits padrão já usam o código pedagógico (Verde: Efeitos, Azul: Loop, Rosa: Melodia, Laranja: Harmonia); falta apenas material sonoro real.
 - **Aba de Edição de Pads (Pad Editor):**
   - Conectar os faders da `SettingsComponent` ao controle real de ganho (Master, Backing Track e volume individual por pad).
   - Implementar controle de *Pitch* em tempo real (`juce::ResamplingAudioSource`) e envelopes simples de *Fade-in* / *Fade-out*.

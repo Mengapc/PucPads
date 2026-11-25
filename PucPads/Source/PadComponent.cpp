@@ -1,5 +1,6 @@
 #include <JuceHeader.h>
 #include "PadComponent.h"
+#include "UiTheme.h"
 
 //==============================================================================
 namespace
@@ -41,8 +42,17 @@ PadComponent::~PadComponent()
 
 void PadComponent::paint (juce::Graphics& g)
 {
-    juce::Colour corFundoInativo = juce::Colour::fromString("ff420012");
-    juce::Colour corBordaInativa = juce::Colour::fromString("ffb08d35");
+    // Pad fantasma (template ainda sem kit): so a silhueta da grade, sem cor de funcao.
+    if (! hasAudio)
+    {
+        g.fillAll (UiTheme::bordo().darker (0.35f));
+        g.setColour (UiTheme::bordaDourada().withAlpha (0.25f));
+        g.drawRoundedRectangle (getLocalBounds().reduced (1).toFloat(), 4.0f, 1.0f);
+        return;
+    }
+
+    juce::Colour corFundoInativo = UiTheme::bordo();
+    juce::Colour corBordaInativa = UiTheme::bordaDourada();
 
     // A MAGICA DA COR: Mistura o fundo inativo com a cor Neon baseada no "currentFade"
     juce::Colour corAtual = corFundoInativo.interpolatedWith(activeColour, currentFade);
@@ -71,6 +81,10 @@ void PadComponent::resized()
 
 void PadComponent::mouseDown (const juce::MouseEvent& event)
 {
+    // Pad fantasma nao reage ao toque: sinalizar brilho daria a falsa impressao de som
+    if (! hasAudio)
+        return;
+
     isMouseDown = true;
 
     // Forca o brilho para o maximo instantaneamente
@@ -96,6 +110,9 @@ void PadComponent::mouseDown (const juce::MouseEvent& event)
 
 void PadComponent::mouseUp (const juce::MouseEvent& event)
 {
+    if (! hasAudio)
+        return;
+
     isMouseDown = false;
 
     if (! oneShot)
@@ -158,17 +175,22 @@ void PadComponent::setupAudio(const char* soundData, int soundDataSize, juce::Mi
     // 1. Registrar os formatos de audio
     formatManager.registerBasicFormats();
 
-    // 2. Criar um "leitor" para o som a partir da memoria
+    // 2. Template sem kit: pad fantasma, nada para carregar nem para mixar
+    if (soundData == nullptr || soundDataSize <= 0)
+        return;
+
+    // 3. Criar um "leitor" para o som a partir da memoria
     auto* reader = formatManager.createReaderFor(std::make_unique<juce::MemoryInputStream>(soundData, soundDataSize, false));
 
     if (reader != nullptr)
     {
-        // 3. Conectar o leitor ao "toca-fitas"
+        // 4. Conectar o leitor ao "toca-fitas"
         std::unique_ptr<juce::AudioFormatReaderSource> newSource (new juce::AudioFormatReaderSource (reader, true));
         transportSource.setSource (newSource.get(), 0, nullptr, reader->sampleRate);
         readerSource.reset (newSource.release());
         transportSource.setGain(baseGain);
         mixerToUse.addInputSource(&transportSource, false);
+        hasAudio = true;
     }
     else
     {

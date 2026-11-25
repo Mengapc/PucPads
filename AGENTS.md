@@ -64,8 +64,10 @@ rítmica, melódica e harmônica, **sem exigir letramento musical prévio**.
     │   ├── Main.cpp                    # Entry point (JUCEApplication + MainWindow)
     │   ├── MainComponent.{h,cpp}       # Raiz: mixer global + navegação de telas
     │   ├── MenuComponent.{h,cpp}       # Menu principal
-    │   ├── PadGridComponent.{h,cpp}    # Páginas de pads + backing track + choke groups
+    │   ├── LaunchPadComponent.{h,cpp}  # Tela única: 8 templates + play/stop da base
+    │   ├── PadGridComponent.{h,cpp}    # Grade/páginas de UM template + backing track + choke groups
     │   ├── PadComponent.{h,cpp}        # Pad individual (sample, cor, playMode, fade visual)
+    │   ├── UiTheme.h                   # Cromo institucional (bordô/dourado) — fonte única
     │   ├── KitDefinition.{h,cpp}       # Parser/schema do kit (v2, retrocompatível com v1)
     │   └── SettingsComponent.{h,cpp}   # Mixer & Configurações (UI)
     ├── JuceLibraryCode/      # >>> GERADO PELO PROJUCER — não editar manualmente
@@ -86,7 +88,9 @@ Fora de `PucPads/`:
 tools/
 ├── validate_kits.py          # Valida schema/referências de áudio dos JSONs de kit
 ├── kit_parser_smoke_test.cpp # Teste de fumaça do parser (executável de console)
-└── run_kit_parser_test.sh    # Compila e roda o teste acima com JUCE
+├── run_kit_parser_test.sh    # Compila e roda o teste acima com JUCE
+├── launchpad_smoke_test.cpp  # Teste de fumaça da navegação/templates (headless)
+└── run_launchpad_test.sh     # Compila e roda o teste acima com JUCE
 ```
 
 > ⚠️ `JuceLibraryCode/` e `Builds/` são **saída do Projucer**. Nunca edite `BinaryData.cpp/h`
@@ -105,19 +109,31 @@ tools/
 
   | Membro | Classe | Papel |
   | --- | --- | --- |
-  | `menuScreen` | `MenuComponent` | Menu inicial (Kit Melodia / Kit Bateria / Mixer) |
-  | `padGridScreen` | `PadGridComponent` | Grade de performance |
+  | `menuScreen` | `MenuComponent` | Menu introdutório (Launch Pad / Mixer & Configurações) |
+  | `launchPadScreen` | `LaunchPadComponent` | **Tela única de performance**: 8 templates + pads |
   | `settingsScreen` | `SettingsComponent` | Mixer & Configurações |
 
-- Troca de tela por `showMenuScreen()`, `showPadScreen(kitFile)` e `showSettingsScreen()`.
+- Troca de tela por `showMenuScreen()`, `showLaunchPadScreen()` e `showSettingsScreen()`.
+- As antigas telas **"Kit Melodia"** e **"Kit Bateria"** (botões do menu que abriam um kit fixo)
+  foram **removidas**: os kits agora são *templates* escolhidos no rodapé do LaunchPad.
 - Roteia cliques em `buttonClicked(juce::Button*)` comparando ponteiros
-  (ex.: `button == &menuScreen->kitMelodiaButton`).
+  (ex.: `button == &menuScreen->launchPadButton`).
 
 **Dois padrões de callback coexistem** — respeite o do arquivo que estiver editando:
 
-1. `backButton` (Grade e Settings) → `addListener(this)` + `buttonClicked()` no `MainComponent`.
-2. `playButton`/`stopButton` (Grade) → lambdas em `onClick`, definidos dentro do próprio
-   `PadGridComponent`.
+1. `backButton` (LaunchPad e Settings) → `addListener(this)` + `buttonClicked()` no `MainComponent`.
+2. `playButton`/`stopButton` (LaunchPad), botões de template e botões de página → lambdas em
+   `onClick`, definidos dentro do próprio componente dono.
+
+**LaunchPad = uma tela, 8 templates** (RF01/estrutura atual):
+
+- Cabeçalho de 60 px: `backButton` + `playButton`/`stopButton` da base musical do template ativo.
+- Rodapé de 70 px: **8 `TextButton`s numerados** (`1`…`8`), um por template; o ativo fica invertido.
+- Hoje **só o template 1 tem kit** (`notes_json`); os demais abrem uma **grade fantasma** 8 × 8
+  (pads mudos, sem áudio) prontos para o futuro editor de pads.
+- Cada template é criado **sob demanda** e fica em cache (`std::unique_ptr<PadGridComponent>`):
+  alternar entre templates **não** recria os `AudioTransportSource`.
+- `updateTransportButtons()` desabilita play/stop quando o template não tem base musical válida.
 
 ### 4.2 Fluxo de áudio
 
@@ -140,23 +156,37 @@ PadGridComponent::backgroundSource ┘
   `pages[]` → `KitPad` (cor já resolvida, `chokeGroup`, `oneShot`, `gainDb`). Aceita **v2 e v1**.
   Especificação completa em `PucPads/Arquivos_PucPads/KIT_SCHEMA.md`. É a única camada que conhece
   o formato do arquivo — componentes de UI não fazem *parse* de JSON.
+- **`UiTheme`** (namespace em `UiTheme.h`): fonte única do cromo institucional (bordô/dourado) e
+  do estilo de `TextButton` (normal × ativo). Não duplique esses hex em componentes novos.
 - **`PadComponent`** (`Component` + `Timer`): recebe um `KitPad` + os bytes do sample
   (`BinaryData`), toca em `mouseDown`, e anima *fade* da cor ativa a **60 Hz**
   (`currentFade -= 0.05f`). Suporta dois modos (`playMode`):
   - `gate` (default, comportamento histórico): para em `mouseUp`;
   - `oneshot`: toca até o fim do sample; o brilho acompanha a duração.
   Expõe `chokeStop()` (fade-out de 25 ms + stop) e o callback `onTriggered`.
-- **`PadGridComponent`**: carrega o kit via `KitDefinition`, cria **todos** os pads das páginas de
-  uma vez em `juce::OwnedArray<Page>`, carrega a *backing track* e faz o *layout* da página ativa.
-  Expõe `backButton`, `playButton`, `stopButton`.
-  - **`resized()`**: cabeçalho de 60 px, grade (`kit.columns × kit.rows`) e **rodapé de 70 px com
-    os botões de página** (RF01 — implementado; ver §6.2 e `KIT_SCHEMA.md` §10).
+- **`PadComponent` — pad fantasma:** com `soundData == nullptr` o pad nasce **mudo**
+  (`hasAudio == false`), não entra no mixer e ignora o toque; serve para a grade dos templates
+  ainda sem kit.
+- **`LaunchPadComponent`**: dono do cromo da tela (voltar, play/stop, rodapé de templates) e da
+  lista `std::vector<TemplateSlot>` (rótulo + recurso de kit + view em cache). `showTemplate(i)`
+  interrompe o áudio do template que sai (`stopAllPads()` + `stopBackingTrack()`), troca a
+  visibilidade e realinha a grade.
+  - Os recursos dos 8 templates estão no array `kTemplateKitResources` (no `.cpp`): **único ponto
+    a mudar** quando os templates passarem a vir de um manifesto/editor.
+- **`PadGridComponent`**: renderiza **um** template. Carrega o kit via `KitDefinition`, cria
+  **todos** os pads das páginas de uma vez em `juce::OwnedArray<Page>`, carrega a *backing track* e
+  faz o *layout* da página ativa. **Não** tem mais `backButton`/`playButton`/`stopButton` — o
+  transporte é comandado pelo `LaunchPadComponent` (`hasBackingTrack()`, `playBackingTrack()`,
+  `stopBackingTrack()`).
+  - Com `kitResource` vazio, monta a **grade fantasma** (`buildEmptyTemplate()`), sem áudio.
+  - **`resized()`**: faixa de páginas de 34 px (**só se o kit tiver mais de uma página**) e a grade
+    (`kit.columns × kit.rows`). O rodapé de 70 px agora pertence ao `LaunchPadComponent`.
   - **Choke groups (RF02)**: `handlePadTriggered()` interrompe os pads do mesmo grupo — inclusive
     de outras páginas do mesmo kit — via `PadComponent::chokeStop()`.
   - Trocar de página **não recria** `AudioTransportSource`s: apenas alterna visibilidade/layout e
     interrompe samples da página que saiu.
-- **`MenuComponent`**: três `TextButton`s públicos (`kitMelodiaButton`, `kitBateriaButton`,
-  `settingsButton`).
+- **`MenuComponent`**: menu introdutório com dois `TextButton`s públicos (`launchPadButton` e
+  `settingsButton`) e o título desenhado em `paint()`.
 - **`SettingsComponent`**: `masterVolumeSlider`, `backingTrackSlider` (vertical), labels e
   `backButton`. ⚠️ **Os sliders são puramente visuais — não estão ligados a ganho algum.**
   Conectar é item explícito do roadmap (Pad Editor).
@@ -304,7 +334,7 @@ Siga de perto o **estilo padrão do JUCE** (é o que o projeto usa):
 - **Indentação:** 4 espaços; chaves estilo *Allman*.
 - **Namespace:** sempre qualifique `juce::` (`juce::Colour`, `juce::String`).
 - **Nomes:** classes em `PascalCase` (`PadGridComponent`); métodos/variáveis/membros em
-  `camelCase` (`showPadScreen`, `currentFade`); **sem** prefixo `m_`.
+  `camelCase` (`showLaunchPadScreen`, `currentFade`); **sem** prefixo `m_`.
 - **Headers:** `#pragma once`.
 - **Macro obrigatória:** encerre classes JUCE com
   `JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ClassName)`.
@@ -389,29 +419,40 @@ continua dependendo de Projucer + IDE. O que **é** possível validar aqui:
 3. Referencie no JSON (`"audioFile": "Novo.mp3"`) na página desejada.
 4. `python3 tools/validate_kits.py` → **Save no Projucer** → recompile.
 
-### Criar um novo kit
+### Criar um novo kit (novo template de Launch Pad)
 1. Copie `drumkit.json` → `NovoKit.json` em `Arquivos_PucPads/`.
 2. Ajuste `kit`, `grid`, `pages` e os pads (schema em `KIT_SCHEMA.md`).
-3. Registre no `.jucer` e regenere.
-4. Em `MainComponent`, crie o botão no menu e chame `showPadScreen("NovoKit_json")`
-   (lembre do *mangling* `.` → `_`).
+3. Registre no `.jucer` (`compile="0" resource="1"`) e regenere.
+4. Em `LaunchPadComponent.cpp`, aponte um slot de `kTemplateKitResources` para
+   `"NovoKit_json"` (lembre do *mangling* `.` → `_`). **Nada** muda no `MainComponent`.
 
 ### Adicionar uma página a um kit existente
 - Acrescente um objeto `{ "name": "...", "pads": [...] }` em `pages`.
-- `name` deve ser único e curto (vira rótulo do botão do rodapé).
+- `name` deve ser único e curto (vira rótulo do botão da faixa de páginas, logo abaixo do cabeçalho).
 - Nenhuma mudança de código é necessária: o número de botões é derivado de `pages.size()`.
 - Cada página suporta até `grid.columns × grid.rows` pads.
 
 ### Ajustar a grade de pads
 A geometria está em `PadGridComponent::layoutPage()`. Agora ela usa **`kit.columns`/`kit.rows`**
-(default 8 × 8, vindos do JSON) e só posiciona os pads existentes. Cabeçalho: 60 px;
-rodapé de navegação: 70 px. Para mudar a densidade, prefira editar o `grid` do JSON a mexer no
-código.
+(default 8 × 8, vindos do JSON) e só posiciona os pads existentes. Cabeçalho: 60 px (no
+`LaunchPadComponent`); faixa de páginas: 34 px, só quando há mais de uma página; rodapé de
+templates: 70 px. Para mudar a densidade, prefira editar o `grid` do JSON a mexer no código.
+
+### Templates de LaunchPad (rodapé) — **implementado**
+- O rodapé do `LaunchPadComponent` tem **8 botões numerados**; cada um é um template (um kit).
+- Para dar um kit a outro template, basta preencher o slot em `kTemplateKitResources`
+  (`LaunchPadComponent.cpp`) com o *resource name* mangled do JSON (ex.: `"drumkit_json"`).
+  Se o JSON ainda não existir no `BinaryData`, o template simplesmente abre vazio.
+- Templates sem kit exibem a grade fantasma (`PadGridComponent::buildEmptyTemplate()`), que é o
+  ponto de partida do futuro editor.
+- Ao criar/remover templates, ajuste `numTemplates` **e** o array (o teste
+  `tools/run_launchpad_test.sh` cobre a contagem de botões).
 
 ### Navegação multi-páginas (RF01) — **implementado**
 - `KitDefinition` entrega `pages[]`; `PadGridComponent` cria um `Page` (`OwnedArray<PadComponent>`)
   por página em `buildPages()`, gera um botão por página em `buildPageButtons()` e alterna em
-  `showPage(i)`.
+  `showPage(i)`. Os botões vivem na **faixa de 34 px abaixo do cabeçalho** (o rodapé passou a ser
+  dos templates).
 - Trocas **não** recriam `AudioTransportSource`s — apenas `setVisible` + `layoutPage()`.
 - A aba ativa é sinalizada invertendo bordô/dourado (§6.1); kits de página única não mostram botões.
 - Ao estender (ex.: gesto de swipe, indicador "2/5"), mantenha `showPage()` como único ponto de
@@ -434,7 +475,7 @@ implementar.
 
 | Req. | Descrição resumida | Onde está / onde vai |
 | --- | --- | --- |
-| RF01 | Disparo polifônico + múltiplas páginas | Polifonia: `MixerAudioSource` (feito). Páginas: **feito** — `KitDefinition::pages` + `PadGridComponent::showPage()` + botões no rodapé |
+| RF01 | Disparo polifônico + múltiplas páginas/templates | Polifonia: `MixerAudioSource` (feito). Páginas: `KitDefinition::pages` + `PadGridComponent::showPage()` (faixa de 34 px). Templates: `LaunchPadComponent` + rodapé com 8 botões (feito) |
 | RF02 | Choke groups ilimitados, fade-out 15–30 ms | **Feito** — `KitPad::chokeGroup` → `PadGridComponent::handlePadTriggered()` → `PadComponent::chokeStop()` (fade de 1 bloco + stop em 25 ms) |
 | RF03 | Pad Editor (volume, pitch, envelopes, trim, clonar/remover) | **A implementar** (`PadEditorComponent`, `juce::ResamplingAudioSource`). `gainDb` por pad já é lido do JSON |
 | RF04 | Cores semânticas por função musical | **Feito** — `KitDefinition::colourForFunction()` + `function`/`color` no JSON (§6.2) |
@@ -443,7 +484,7 @@ implementar.
 | RF07 | MIDI externo + compartilhamento de kits | **A implementar** (nenhum código MIDI hoje) |
 | RNF01 | Baixa latência | Manter `MixerAudioSource`/buffers; não alocar na thread de áudio |
 | RNF02 | Multiplataforma + multitouch | `resized()` dinâmico; `mouseDown/Up` já respondem a múltiplos ponteiros |
-| RNF03 | Dark Mode bordô/dourado | Cores em `MenuComponent`, `PadGridComponent`, `SettingsComponent`, `PadComponent` |
+| RNF03 | Dark Mode bordô/dourado | `UiTheme.h` (fonte única) consumida por `MenuComponent`, `LaunchPadComponent`, `PadGridComponent`, `PadComponent`, `SettingsComponent` |
 | RNF04 | Gestão segura de memória | `unique_ptr`, `OwnedArray`, `removeInputSource` nos destrutores, `SafePointer` no *fade* assíncrono |
 
 ---
@@ -456,15 +497,17 @@ Não existe CI nem suíte rodando na IDE, mas há **duas verificações automati
 | --- | --- | --- |
 | `python3 tools/validate_kits.py` | schema, `audioFile` existente, faixas de `gainDb`/`chokeGroup`, nomes de página duplicados, capacidade da grade, paleta | ✅ |
 | `JUCE_DIR=... ./tools/run_kit_parser_test.sh` | parser C++ real: kits atuais, regras de cor, `playMode`, `chokeGroup`, `gainDb`, grade customizada, descarte de pad inválido, **compatibilidade v1** | ✅ (requer baixar JUCE + libs) |
+| `JUCE_DIR=... ./tools/run_launchpad_test.sh` | tela de Launch Pad *headless*: 8 botões de template, template 1 com 128 pads/2 páginas, grade fantasma 8×8 nos templates vazios, play/stop habilitado só com base válida, *layout* (60/70 px) e cache de views | ✅ (requer baixar JUCE + libs) |
 
 - **Adicione caso de teste** ao `kit_parser_smoke_test.cpp` sempre que o schema ganhar campo novo.
   Ele é um alvo de console (módulos core/events/graphics), não faz parte do binário do app.
 - Verificação **manual** continua necessária para UI/áudio: compilar na IDE e testar
   clique/multitouch no desktop e no Android.
-- Checklist mínimo antes de entregar: carregar os dois kits; trocar de página com sample tocando
-  (o som deve ser interrompido); disparar pads do mesmo choke group em sequência (sem *click*);
-  play/stop da *backing track*; navegar entre as três telas e voltar; sem *crash* ao trocar de
-  kit/página repetidamente (leak detector do JUCE em Debug).
+- Checklist mínimo antes de entregar: carregar o template 1; alternar entre os 8 templates
+  (voltar ao 1 deve manter o kit carregado); trocar de página com sample tocando (o som deve ser
+  interrompido); disparar pads do mesmo choke group em sequência (sem *click*); play/stop da
+  *backing track* (desabilitado nos templates sem kit); navegar entre as três telas e voltar; sem
+  *crash* ao trocar de template/página repetidamente (leak detector do JUCE em Debug).
 
 ---
 
@@ -510,10 +553,11 @@ Não existe CI nem suíte rodando na IDE, mas há **duas verificações automati
    git ou LFS.
 5. **Fade de choke é de granularidade de bloco** (`setGain` + stop em 25 ms), não envelope
    amostra a amostra. Aceitável hoje; revisar se houver requisito de precisão.
-6. **Ciclo de vida assimétrico das telas:** `showMenuScreen()` **destrói** a `padGridScreen`
-   (`reset()`) a cada retorno, mas `settingsScreen` é criada uma única vez e **nunca** é
-   destruída (apenas escondida) — daí o `addAndMakeVisible` em toda entrada. Consequência: sair
-   da grade **recria todos os pads e recarrega o áudio** na próxima entrada.
+6. **Ciclo de vida assimétrico das telas:** `showMenuScreen()` **destrói** a `launchPadScreen`
+   (`reset()`, o que também derruba os views em cache dos templates), mas `settingsScreen` é criada
+   uma única vez e **nunca** é destruída (apenas escondida) — daí o `addAndMakeVisible` em toda
+   entrada. Consequência: sair do LaunchPad **recria todos os pads e recarrega o áudio** na próxima
+   entrada.
 7. **`playMode` é por pad, não por kit** — se o produto definir um modo global por kit, avaliar
    um `kit.defaultPlayMode` (aditivo, retrocompatível).
 8. **MODULEPATH inconsistente no `.jucer`** (ver §8).
@@ -522,6 +566,13 @@ Não existe CI nem suíte rodando na IDE, mas há **duas verificações automati
    inválido no Pad Editor.
 10. **Sem CI** — as verificações de `tools/` são locais (executáveis, mas ninguém as roda
     automaticamente). Um workflow simples de CI cobrindo `validate_kits.py` é barato.
+11. **Templates declarados em código** — os 8 slots (nome + kit) vivem em
+    `kTemplateKitResources` (`LaunchPadComponent.cpp`). Quando os templates passarem a ser
+    criados/editados pelo usuário (RF06), extrair para um manifesto JSON no `BinaryData` ou para
+    preferências (`ApplicationProperties`), mantendo os 8 slots como *default*.
+12. **Templates 2–8 e `drumkit.json` sem uso** — o kit "Bateria" continua no `BinaryData`, mas
+    nenhum template o referencia hoje. É o candidato natural a template 2 quando o conteúdo sonoro
+    real chegar.
 
 ---
 

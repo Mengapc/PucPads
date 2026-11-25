@@ -25,6 +25,9 @@ public:
     int getChokeGroup() const noexcept { return chokeGroup; }
     juce::String getNoteName() const { return noteName; }
 
+    // Pad fantasma (templates sem kit): desenhado, mas mudo e nao interativo.
+    bool isEmptyPad() const noexcept { return ! hasAudio; }
+
     // (Des)liga o pad via choke group / troca de pagina, com fade curto para evitar estalos.
     void chokeStop();
 
@@ -60,6 +63,7 @@ private:
     juce::String noteName;
     int chokeGroup = 0;
     bool oneShot = false;
+    bool hasAudio = false; // false = pad fantasma (sem sample carregado)
     float baseGain = 1.0f;
 
     // Invalida um chokeStop pendente quando o pad e reacionado dentro da janela de fade

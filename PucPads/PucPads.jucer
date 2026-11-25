@@ -15,6 +15,15 @@
             file="Source/PadGridComponent.cpp"/>
       <FILE id="xAzNiv" name="PadGridComponent.h" compile="0" resource="0"
             file="Source/PadGridComponent.h"/>
+      <FILE id="Lpd0c1" name="LaunchPadComponent.cpp" compile="1" resource="0"
+            file="Source/LaunchPadComponent.cpp"/>
+      <FILE id="Lpd0h1" name="LaunchPadComponent.h" compile="0" resource="0"
+            file="Source/LaunchPadComponent.h"/>
+      <FILE id="KtDf1h" name="KitDefinition.h" compile="0" resource="0"
+            file="Source/KitDefinition.h"/>
+      <FILE id="KtDf2c" name="KitDefinition.cpp" compile="1" resource="0"
+            file="Source/KitDefinition.cpp"/>
+      <FILE id="UiTh01" name="UiTheme.h" compile="0" resource="0" file="Source/UiTheme.h"/>
       <FILE id="Owferc" name="PadComponent.cpp" compile="1" resource="0"
             file="Source/PadComponent.cpp"/>
       <FILE id="c8SCgT" name="PadComponent.h" compile="0" resource="0" file="Source/PadComponent.h"/>

@@ -1,13 +1,13 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "PadGridComponent.h" 
-#include "MenuComponent.h"    
+#include "LaunchPadComponent.h"
+#include "MenuComponent.h"
 #include "SettingsComponent.h"
 
 //==============================================================================
 class MainComponent : public juce::AudioAppComponent,
-    public juce::Button::Listener 
+    public juce::Button::Listener
 {
 public:
     MainComponent();
@@ -23,18 +23,18 @@ public:
     void resized() override;
 
     // Funções de Navegação
-    void showPadScreen(juce::String kitFile);
-    void showSettingsScreen(); // Nova função para ir pro Mixer
-    void showMenuScreen();     // Nova função para voltar pro Menu
-    
+    void showLaunchPadScreen(); // Tela unica de performance (pads + templates)
+    void showSettingsScreen();  // Mixer & Configuracoes
+    void showMenuScreen();      // Volta para o menu introdutorio
+
     void buttonClicked(juce::Button* button) override;
 
 private:
     juce::MixerAudioSource mixerSource;
 
-    // Nossas três "telas" gerenciadas com unique_ptr
+    // Nossas tres "telas" gerenciadas com unique_ptr
     std::unique_ptr<MenuComponent> menuScreen;
-    std::unique_ptr<PadGridComponent> padGridScreen;
+    std::unique_ptr<LaunchPadComponent> launchPadScreen;
     std::unique_ptr<SettingsComponent> settingsScreen;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
