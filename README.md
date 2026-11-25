@@ -101,15 +101,18 @@ O diagrama de interface ilustra o *storyboard* de navegação em *Dark Mode*, es
 | **IDE Mobile (Android)** | Android Studio Jellyfish / Iguana ou superior (SDK Platform 34, NDK Side-by-side 26.x/27.x, CMake) |
 
 ### 5.2 Configuração Desktop (Windows)
-1. Extraia o JUCE em um diretório raiz (ex.: `C:\JUCE`) e abra o **Projucer**.
-2. Abra o arquivo `PucPads.jucer` e verifique os caminhos em `File > Global Paths`.
-3. Selecione o exportador **Visual Studio 2022** e clique em *Save and Open in IDE*.
+1. Obtenha o **JUCE 8.0.10** (clone do repositório oficial; o ZIP da *release* também serve — o *Oboe* já vem embutido) e abra o **Projucer**.
+2. Em `File > Global Paths`, defina **Path to JUCE** apontando para a pasta que contém `modules/` (ex.: `C:\JUCE`).
+   O `PucPads.jucer` **não guarda mais caminhos de módulo** (`useGlobalPath`, ver §5.5): quem resolve o JUCE é essa configuração, uma vez por máquina.
+3. Abra o arquivo `PucPads.jucer` e clique em **Save Project** (regenera `JuceLibraryCode/` e `Builds/`).
+4. Selecione o exportador **Visual Studio 2022** e clique em *Save and Open in IDE*.
 
 ### 5.3 Configuração Mobile (Android)
 1. Garanta que o projeto esteja em um **caminho somente ASCII** (veja §5.4 — o Gradle aborta a configuração caso contrário).
 2. No Android Studio (SDK Manager), instale o **NDK (Side by side)** e o **CMake**.
-3. No Projucer, configure os caminhos do SDK e NDK em `File > Global Paths`.
-4. Salve o projeto para gerar os arquivos Gradle em `Builds/Android`, abra a pasta no Android Studio e execute o build via Depuração USB.
+3. No Projucer, em `File > Global Paths`, configure **Path to JUCE** (pasta do JUCE 8.0.10), o **Android SDK** e o **NDK**.
+4. **Save Project** (obrigatório: regenera `JuceLibraryCode/` e o CMake/Gradle em `Builds/Android` — ver §5.5).
+5. Abra a pasta `Builds/Android` no Android Studio, conecte o dispositivo com Depuração USB e execute o build.
 
 ### 5.4 Requisito de caminho do projeto (Windows)
 
@@ -139,6 +142,51 @@ del /q local.properties
 
 No Android Studio, use `File > Invalidate Caches / Restart` e reabra a pasta `Builds\Android` pelo **novo**
 caminho (o atalho de projeto recente continua apontando para o antigo).
+
+### 5.5 Caminho dos módulos JUCE (`useGlobalPath`) e falha do Oboe (`CXX1429`)
+
+O `PucPads.jucer` **não armazena mais caminhos de módulo**. Até então, cada exportador (VS2022 e Android)
+trazia `<MODULEPATHS>` com `../../../Software/JUCE/modules` — caminho **relativo à pasta `PucPads/`**, ou seja,
+resolvido para `D:\Software\JUCE\modules` na máquina do autor — e `juce_audio_processors_headless` apontava
+para `D:\Softwares\Faculdade\JUCE\modules`. Em qualquer outra máquina esses caminhos não existem e o build
+quebra. Hoje todos os módulos usam `useGlobalPath="1"`: a resolução vem de `File > Global Paths > Path to JUCE`
+(uma configuração por máquina, fora do versionamento).
+
+Sintoma típico do caminho errado no Android:
+
+```text
+[CXX1429] error when building with cmake ...
+CMake Error at CMakeLists.txt:12 (add_subdirectory):
+  add_subdirectory given source
+  "../../../../../../Software/JUCE/modules/juce_audio_devices/native/oboe"
+  which is not an existing directory.
+```
+
+O `Builds/Android/app/CMakeLists.txt` gerado pelo Projucer contém
+`set(OBOE_DIR ".../juce_audio_devices/native/oboe")` + `add_subdirectory (${OBOE_DIR} ./oboe)` — a linha 12 é
+justamente o **primeiro** uso de um caminho de módulo, por isso ela grita antes das demais. Em outras palavras:
+o erro não é do Oboe nem de submódulo faltando (no JUCE 8.0.10 o Oboe é **vendorizado** em
+`modules/juce_audio_devices/native/oboe`), é o caminho do JUCE que está errado ou aponta para uma cópia antiga.
+
+**Correção:**
+
+1. `File > Global Paths` → **Path to JUCE** = pasta do JUCE **8.0.10** (a que contém `modules/`). Se já existir um
+   caminho configurado apontando para JUCE 6/7, troque — versões antigas não têm o Oboe embutido.
+2. **Save Project** no Projucer (regenera `JuceLibraryCode/` e `Builds/Android/app/CMakeLists.txt`).
+3. Descarte os caches do CMake, que guardam o caminho antigo:
+
+```bat
+cd /d <CAMINHO>\PucPads\Builds\Android
+rmdir /s /q .gradle app\.cxx app\build
+del /q local.properties
+```
+
+4. Rebuild no Android Studio (`File > Invalidate Caches / Restart` se o Gradle insistir no caminho antigo).
+
+> ℹ️ **`juce_audio_processors_headless` foi removido do projeto.** Não é um módulo oficial do JUCE 8.0.10 —
+> vinha de um *fork* de faculdade (`D:\Softwares\Faculdade\JUCE\modules`), estava apenas *habilitado* (nenhum
+> arquivo de `Source/` o usa) e fazia o `JuceHeader.h` gerado incluir um header inexistente em qualquer JUCE
+> oficial. Se algum dia for realmente necessário, ele precisa ser versionado dentro do repositório.
 
 ---
 

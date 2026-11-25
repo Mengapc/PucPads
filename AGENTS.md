@@ -42,7 +42,7 @@ rítmica, melódica e harmônica, **sem exigir letramento musical prévio**.
 | Gerador de projeto | **Projucer** (`PucPads/PucPads.jucer`) |
 | IDE Desktop | Visual Studio 2022 (carga *Desenvolvimento para Desktop com C++*, MSVC v143+, Windows 10/11 SDK) |
 | IDE Mobile | Android Studio Jellyfish/Iguana+ (SDK Platform 34, NDK side-by-side 26.x/27.x, CMake) |
-| Módulos JUCE | `juce_audio_basics`, `juce_audio_devices`, `juce_audio_formats`, `juce_audio_processors`, `juce_audio_processors_headless`, `juce_audio_utils`, `juce_core`, `juce_data_structures`, `juce_events`, `juce_graphics`, `juce_gui_basics`, `juce_gui_extra` |
+| Módulos JUCE | `juce_audio_basics`, `juce_audio_devices`, `juce_audio_formats`, `juce_audio_processors`, `juce_audio_utils`, `juce_core`, `juce_data_structures`, `juce_events`, `juce_graphics`, `juce_gui_basics`, `juce_gui_extra` (todos via `useGlobalPath`, §8.2) |
 | Opções de projeto | `JUCE_STRICT_REFCOUNTEDPOINTER=1`, `JUCE_USE_MP3AUDIOFORMAT=1` |
 | Orientação Android | `androidScreenOrientation="portrait"` |
 
@@ -375,15 +375,17 @@ Siga de perto o **estilo padrão do JUCE** (é o que o projeto usa):
 > [`README.md`](README.md) §5.2 (Desktop) e §5.3 (Android).
 
 ### 8.1 Desktop (Windows / VS2022)
-1. Extraia o JUCE (ex.: `C:\JUCE`) e abra o **Projucer**.
-2. Abra `PucPads/PucPads.jucer`; confira `File > Global Paths` (módulos JUCE).
-3. Exportador **Visual Studio 2022** → *Save and Open in IDE* → compile em
+1. Obtenha o **JUCE 8.0.10** (clone oficial; o ZIP da *release* também inclui o Oboe vendorizado) e abra o **Projucer**.
+2. `File > Global Paths` → **Path to JUCE** = pasta que contém `modules/`. É a **única** fonte do caminho dos
+   módulos: o `.jucer` usa `useGlobalPath="1"` e não guarda `<MODULEPATHS>` (ver §8.2).
+3. Abra `PucPads/PucPads.jucer` e dê **Save Project** (regenera `JuceLibraryCode/` e `Builds/`).
+4. Exportador **Visual Studio 2022** → *Save and Open in IDE* → compile em
    `Builds/VisualStudio2022/`.
 
 ### 8.2 Android
 1. No Android Studio (SDK Manager), instale **NDK (side by side)** e **CMake**.
-2. No Projucer, configure SDK/NDK em `File > Global Paths`.
-3. Salve para gerar o Gradle em `Builds/Android`, abra a pasta no Android Studio, conecte o
+2. No Projucer, configure **Path to JUCE**, SDK e NDK em `File > Global Paths`.
+3. **Save Project** para gerar o Gradle em `Builds/Android`, abra a pasta no Android Studio, conecte o
    dispositivo com Depuração USB e execute o build.
 
 > ⚠️ **Caminho do projeto tem que ser ASCII.** Com acento/cedilha no caminho (ex.:
@@ -394,11 +396,18 @@ Siga de perto o **estilo padrão do JUCE** (é o que o projeto usa):
 > `app/.cxx`, `app/build` e `local.properties` (guardam caminhos absolutos antigos).
 
 
-> ⚠️ **MODULEPATHS inconsistentes no `.jucer`:** nos dois exportadores (VS2022 e Android), quase
-> todos os módulos apontam para `../../../Software/JUCE/modules`, mas
-> `juce_audio_processors_headless` aponta para `../../../../Softwares/Faculdade/JUCE/modules`
-> (caminho da máquina do autor). Se o build falhar com "module not found", corrija pelos
-> **Global Paths do Projucer** — não edite caminhos absolutos no `.jucer`.
+> ⚠️ **Caminho dos módulos JUCE = `File > Global Paths`.** O `.jucer` usa `useGlobalPath="1"` em todos os
+> módulos e **não** tem `<MODULEPATHS>` (até o commit anterior, os exportadores traziam
+> `../../../Software/JUCE/modules` — caminho da máquina do autor — e `juce_audio_processors_headless`
+> apontava para um *fork* de faculdade). Sem o **Path to JUCE** configurado, o Projucer acusa módulo não
+> encontrado; configurado, todos os exportadores resolvem o mesmo JUCE 8.0.10. Se o Android falhar com
+> `CXX1429 ... add_subdirectory given source ".../juce_audio_devices/native/oboe" which is not an existing
+> directory`, o caminho do JUCE está errado/antigo ou o `Builds/Android` foi gerado antes da correção:
+> **Save Project** + limpar `app/.cxx`, `app/build`, `.gradle` e `local.properties`. Diagnóstico completo em
+> [`README.md`](README.md) §5.5.
+>
+> ℹ️ `juce_audio_processors_headless` **não existe** no JUCE oficial (era módulo de *fork*, sem uso em
+> `Source/`) e foi removido do projeto. Não o reabilite sem antes versioná-lo no repositório.
 
 ### 8.3 Limitação do sandbox de agente (DevBox)
 
@@ -568,7 +577,9 @@ Não existe CI nem suíte rodando na IDE, mas há **duas verificações automati
    entrada.
 7. **`playMode` é por pad, não por kit** — se o produto definir um modo global por kit, avaliar
    um `kit.defaultPlayMode` (aditivo, retrocompatível).
-8. **MODULEPATH inconsistente no `.jucer`** (ver §8).
+8. **Módulos JUCE resolvidos por máquina** (`useGlobalPath`, §8.2): quem clonar sem configurar
+   `File > Global Paths` verá "module not found". Mitigação possível: versionar o JUCE como submódulo
+   (`third_party/JUCE`) e documentar o *bootstrap*.
 9. **Parser valida estrutura, não conteúdo sonoro** — `audioFile` inexistente é descartado com
    `DBG`, mas a UI não avisa o usuário que um pad "sumiu". Considerar indicador visual de pad
    inválido no Pad Editor.
