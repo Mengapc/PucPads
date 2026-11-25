@@ -38,11 +38,11 @@ rítmica, melódica e harmônica, **sem exigir letramento musical prévio**.
 | Item | Valor |
 | --- | --- |
 | Linguagem | C++ (padrão exigido pelo JUCE 8) |
-| Framework | **JUCE 8.0.10 ou superior** |
+| Framework | **JUCE 8.0.11 ou superior** (desde a 8.0.11 `juce_audio_processors` depende de `juce_audio_processors_headless`, que não existe na 8.0.10 — ver §8.2) |
 | Gerador de projeto | **Projucer** (`PucPads/PucPads.jucer`) |
 | IDE Desktop | Visual Studio 2022 (carga *Desenvolvimento para Desktop com C++*, MSVC v143+, Windows 10/11 SDK) |
 | IDE Mobile | Android Studio Jellyfish/Iguana+ (SDK Platform 34, NDK side-by-side 26.x/27.x, CMake) |
-| Módulos JUCE | `juce_audio_basics`, `juce_audio_devices`, `juce_audio_formats`, `juce_audio_processors`, `juce_audio_utils`, `juce_core`, `juce_data_structures`, `juce_events`, `juce_graphics`, `juce_gui_basics`, `juce_gui_extra` (todos via `useGlobalPath`, §8.2) |
+| Módulos JUCE | `juce_audio_basics`, `juce_audio_devices`, `juce_audio_formats`, `juce_audio_processors`, `juce_audio_processors_headless`, `juce_audio_utils`, `juce_core`, `juce_data_structures`, `juce_events`, `juce_graphics`, `juce_gui_basics`, `juce_gui_extra` (todos via `useGlobalPath`, §8.2) |
 | Opções de projeto | `JUCE_STRICT_REFCOUNTEDPOINTER=1`, `JUCE_USE_MP3AUDIOFORMAT=1` |
 | Orientação Android | `androidScreenOrientation="portrait"` |
 
@@ -375,7 +375,7 @@ Siga de perto o **estilo padrão do JUCE** (é o que o projeto usa):
 > [`README.md`](README.md) §5.2 (Desktop) e §5.3 (Android).
 
 ### 8.1 Desktop (Windows / VS2022)
-1. Obtenha o **JUCE 8.0.10** (clone oficial; o ZIP da *release* também inclui o Oboe vendorizado) e abra o **Projucer**.
+1. Obtenha o **JUCE 8.0.11+** (clone oficial; o ZIP da *release* também inclui o Oboe vendorizado) e abra o **Projucer** dessa mesma cópia.
 2. `File > Global Paths` → **Path to JUCE** = pasta que contém `modules/`. É a **única** fonte do caminho dos
    módulos: o `.jucer` usa `useGlobalPath="1"` e não guarda `<MODULEPATHS>` (ver §8.2).
 3. Abra `PucPads/PucPads.jucer` e dê **Save Project** (regenera `JuceLibraryCode/` e `Builds/`).
@@ -397,17 +397,20 @@ Siga de perto o **estilo padrão do JUCE** (é o que o projeto usa):
 
 
 > ⚠️ **Caminho dos módulos JUCE = `File > Global Paths`.** O `.jucer` usa `useGlobalPath="1"` em todos os
-> módulos e **não** tem `<MODULEPATHS>` (até o commit anterior, os exportadores traziam
-> `../../../Software/JUCE/modules` — caminho da máquina do autor — e `juce_audio_processors_headless`
-> apontava para um *fork* de faculdade). Sem o **Path to JUCE** configurado, o Projucer acusa módulo não
-> encontrado; configurado, todos os exportadores resolvem o mesmo JUCE 8.0.10. Se o Android falhar com
+> módulos e **não** tem `<MODULEPATHS>` (até o commit `637c1fe`, os exportadores traziam
+> `../../../Software/JUCE/modules` — caminho relativo à máquina do autor — e
+> `juce_audio_processors_headless` apontava para `../../../../Softwares/Faculdade/JUCE/modules`). Sem o
+> **Path to JUCE** configurado, o Projucer acusa módulo não encontrado; configurado, todos os exportadores
+> resolvem o mesmo JUCE. Se o Android falhar com
 > `CXX1429 ... add_subdirectory given source ".../juce_audio_devices/native/oboe" which is not an existing
 > directory`, o caminho do JUCE está errado/antigo ou o `Builds/Android` foi gerado antes da correção:
 > **Save Project** + limpar `app/.cxx`, `app/build`, `.gradle` e `local.properties`. Diagnóstico completo em
 > [`README.md`](README.md) §5.5.
 >
-> ℹ️ `juce_audio_processors_headless` **não existe** no JUCE oficial (era módulo de *fork*, sem uso em
-> `Source/`) e foi removido do projeto. Não o reabilite sem antes versioná-lo no repositório.
+> ℹ️ **`juce_audio_processors_headless` é módulo oficial, mas só a partir do JUCE 8.0.11** (na 8.0.10 não
+> existe; desde a 8.0.11 `juce_audio_processors` depende dele). Ele **deve continuar habilitado** e é
+> resolvido pelo *Path to JUCE* como os demais. Isso torna o **8.0.11 a versão mínima** do projeto.
+> Nunca apague diretórios dentro de `modules/` de uma instalação do JUCE: a pasta pertence ao framework.
 
 ### 8.3 Limitação do sandbox de agente (DevBox)
 

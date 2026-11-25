@@ -72,7 +72,7 @@ O aplicativo organiza os elementos musicais de forma visual e intuitiva na matri
 ## 4. Arquitetura Técnica e Design de Interface
 
 ### 4.1 Arquitetura Modular (C++ / JUCE)
-O sistema é estruturado de forma modular sobre o framework **JUCE 8.0.10**:
+O sistema é estruturado de forma modular sobre o framework **JUCE 8.0.11 ou superior**:
 - **Gerenciador Principal (`MainComponent`):** Controla o ciclo de vida das telas via `std::unique_ptr`, gerencia o `juce::MixerAudioSource` central e garante a limpeza segura de recursos de áudio na navegação.
 - **Núcleo de Performance (`PadGridComponent` & `PadComponent`):** Renderiza a grade 8x8 responsiva, gerencia a reprodução da *backing track*, executa o feedback visual de *fade-out* a 60 FPS via `juce::Timer` e interpreta os arquivos de configuração JSON.
 - **Mixer e Configurações (`SettingsComponent`):** Interface dedicada ao roteamento de áudio, controle de ganho (Master e Base) e parâmetros técnicos.
@@ -96,12 +96,12 @@ O diagrama de interface ilustra o *storyboard* de navegação em *Dark Mode*, es
 ### 5.1 Ferramentas e Versões
 | Ferramenta | Especificação / Versão |
 | :--- | :--- |
-| **Framework de Áudio** | JUCE 8.0.10 ou superior |
+| **Framework de Áudio** | JUCE **8.0.11 ou superior** (o módulo `juce_audio_processors_headless`, exigido por `juce_audio_processors` desde a 8.0.11, não existe na 8.0.10 — ver §5.5) |
 | **IDE Desktop (Windows)** | Visual Studio 2022 (Carga: *Desenvolvimento para Desktop com C++*, MSVC v143+, Windows 10/11 SDK) |
 | **IDE Mobile (Android)** | Android Studio Jellyfish / Iguana ou superior (SDK Platform 34, NDK Side-by-side 26.x/27.x, CMake) |
 
 ### 5.2 Configuração Desktop (Windows)
-1. Obtenha o **JUCE 8.0.10** (clone do repositório oficial; o ZIP da *release* também serve — o *Oboe* já vem embutido) e abra o **Projucer**.
+1. Obtenha o **JUCE 8.0.11+** (clone do repositório oficial; o ZIP da *release* também serve — o *Oboe* já vem embutido) e abra o **Projucer** dessa mesma cópia.
 2. Em `File > Global Paths`, defina **Path to JUCE** apontando para a pasta que contém `modules/` (ex.: `C:\JUCE`).
    O `PucPads.jucer` **não guarda mais caminhos de módulo** (`useGlobalPath`, ver §5.5): quem resolve o JUCE é essa configuração, uma vez por máquina.
 3. Abra o arquivo `PucPads.jucer` e clique em **Save Project** (regenera `JuceLibraryCode/` e `Builds/`).
@@ -110,7 +110,7 @@ O diagrama de interface ilustra o *storyboard* de navegação em *Dark Mode*, es
 ### 5.3 Configuração Mobile (Android)
 1. Garanta que o projeto esteja em um **caminho somente ASCII** (veja §5.4 — o Gradle aborta a configuração caso contrário).
 2. No Android Studio (SDK Manager), instale o **NDK (Side by side)** e o **CMake**.
-3. No Projucer, em `File > Global Paths`, configure **Path to JUCE** (pasta do JUCE 8.0.10), o **Android SDK** e o **NDK**.
+3. No Projucer, em `File > Global Paths`, configure **Path to JUCE** (pasta do JUCE 8.0.11+), o **Android SDK** e o **NDK**.
 4. **Save Project** (obrigatório: regenera `JuceLibraryCode/` e o CMake/Gradle em `Builds/Android` — ver §5.5).
 5. Abra a pasta `Builds/Android` no Android Studio, conecte o dispositivo com Depuração USB e execute o build.
 
@@ -132,12 +132,22 @@ não é correção durável.
 | **C** | `android.overridePathCheck=true` em `Builds/Android/gradle.properties` | ❌ não (o Projucer apaga no próximo *Save*) | Serve só para teste rápido |
 | **D** | Mesma linha em `%USERPROFILE%\.gradle\gradle.properties` | ✅ sim (vale para toda a máquina) | Desliga a checagem em **todos** os projetos; o build pode falhar depois no NDK/aapt2 |
 
-Após mover o projeto (opção A), descarte os caches gerados no caminho antigo — eles guardam caminhos absolutos:
+Após mover o projeto (opção A), descarte os caches gerados no caminho antigo — eles guardam caminhos absolutos.
+Escolha o bloco conforme o terminal que você usa (são comandos diferentes: `rmdir`/`del` são do `cmd.exe` e
+**não existem** no Git Bash):
 
 ```bat
+:: Prompt do Windows (cmd.exe)
 cd /d D:\Projetos\Programacao\PucPads\PucPads\Builds\Android
 rmdir /s /q .gradle app\.cxx app\build
 del /q local.properties
+```
+
+```bash
+# Git Bash / WSL / shell POSIX
+cd /d/Projetos/Programacao/PucPads/PucPads/Builds/Android
+rm -rf .gradle app/.cxx app/build
+rm -f local.properties
 ```
 
 No Android Studio, use `File > Invalidate Caches / Restart` e reabra a pasta `Builds\Android` pelo **novo**
@@ -165,28 +175,41 @@ CMake Error at CMakeLists.txt:12 (add_subdirectory):
 O `Builds/Android/app/CMakeLists.txt` gerado pelo Projucer contém
 `set(OBOE_DIR ".../juce_audio_devices/native/oboe")` + `add_subdirectory (${OBOE_DIR} ./oboe)` — a linha 12 é
 justamente o **primeiro** uso de um caminho de módulo, por isso ela grita antes das demais. Em outras palavras:
-o erro não é do Oboe nem de submódulo faltando (no JUCE 8.0.10 o Oboe é **vendorizado** em
+o erro não é do Oboe nem de submódulo faltando (no JUCE 8.x o Oboe é **vendorizado** em
 `modules/juce_audio_devices/native/oboe`), é o caminho do JUCE que está errado ou aponta para uma cópia antiga.
 
 **Correção:**
 
-1. `File > Global Paths` → **Path to JUCE** = pasta do JUCE **8.0.10** (a que contém `modules/`). Se já existir um
-   caminho configurado apontando para JUCE 6/7, troque — versões antigas não têm o Oboe embutido.
+1. `File > Global Paths` → **Path to JUCE** = pasta do JUCE **8.0.11+** (a que contém `modules/`). Se já existir um
+   caminho configurado apontando para JUCE 6/7, troque — versões antigas não têm o Oboe embutido nem o módulo
+   `juce_audio_processors_headless`.
 2. **Save Project** no Projucer (regenera `JuceLibraryCode/` e `Builds/Android/app/CMakeLists.txt`).
 3. Descarte os caches do CMake, que guardam o caminho antigo:
 
 ```bat
+:: Prompt do Windows (cmd.exe)
 cd /d <CAMINHO>\PucPads\Builds\Android
 rmdir /s /q .gradle app\.cxx app\build
 del /q local.properties
 ```
 
+```bash
+# Git Bash / WSL / shell POSIX
+cd <CAMINHO>/PucPads/Builds/Android
+rm -rf .gradle app/.cxx app/build
+rm -f local.properties
+```
+
 4. Rebuild no Android Studio (`File > Invalidate Caches / Restart` se o Gradle insistir no caminho antigo).
 
-> ℹ️ **`juce_audio_processors_headless` foi removido do projeto.** Não é um módulo oficial do JUCE 8.0.10 —
-> vinha de um *fork* de faculdade (`D:\Softwares\Faculdade\JUCE\modules`), estava apenas *habilitado* (nenhum
-> arquivo de `Source/` o usa) e fazia o `JuceHeader.h` gerado incluir um header inexistente em qualquer JUCE
-> oficial. Se algum dia for realmente necessário, ele precisa ser versionado dentro do repositório.
+> ℹ️ **`juce_audio_processors_headless` é módulo oficial — mas só existe a partir da 8.0.11.**
+> Na 8.0.10 o `juce_audio_processors` dependia de `juce_gui_extra, juce_audio_basics`; a partir da **8.0.11** ele foi
+> dividido e passou a depender de `juce_audio_processors_headless` (que, por sua vez, depende de
+> `juce_audio_basics` e `juce_events`). Por isso o módulo **permanece habilitado** no projeto: o Projucer o resolve
+> via *Path to JUCE* como qualquer outro módulo `juce_*`, e removê-lo quebra a cadeia de dependências.
+> Consequência prática: a **versão mínima de JUCE do projeto é 8.0.11** — com 8.0.10 o Projucer não conhece o
+> módulo e o projeto não abre/compila. Não apague nada dentro de `modules/` do JUCE: a pasta é da instalação do
+> framework, não do projeto.
 
 ---
 
