@@ -1,45 +1,73 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "KitDefinition.h"
 
 //==============================================================================
 /*
-    Esta classe representa um único pad na nossa interface.
+    Esta classe representa um unico pad na nossa interface.
 */
-class PadComponent  : public juce::Component, public juce::Timer
+class PadComponent : public juce::Component,
+                     public juce::Timer
 {
 public:
-    PadComponent(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse, juce::Colour padColour);
+    PadComponent(const KitPad& padSpec, const char* soundData, int soundDataSize,
+                 juce::MixerAudioSource& mixerToUse);
+
+    // Mantido por compatibilidade: cria um pad sem metadados (apenas a cor).
+    PadComponent(const char* soundData, int soundDataSize,
+                 juce::MixerAudioSource& mixerToUse, juce::Colour padColour);
+
     ~PadComponent() override;
 
     juce::AudioTransportSource& getTransportSource() { return transportSource; }
-    
+
+    int getChokeGroup() const noexcept { return chokeGroup; }
+    juce::String getNoteName() const { return noteName; }
+
+    // (Des)liga o pad via choke group / troca de pagina, com fade curto para evitar estalos.
+    void chokeStop();
+
+    // Disparado quando este pad e acionado. O PadGridComponent usa para resolver
+    // os grupos de exclusao mutua.
+    std::function<void (PadComponent*)> onTriggered;
+
     void paint (juce::Graphics&) override;
     void resized() override;
     void timerCallback() override;
 
-    // Funções de evento do mouse
+    // Funcoes de evento do mouse
     void mouseDown (const juce::MouseEvent& event) override;
     void mouseUp (const juce::MouseEvent& event) override;
     void mouseExit(const juce::MouseEvent& event) override;
-    
+
 private:
+    void setupAudio(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse);
+    void finishChokeStop();
+
+    static constexpr int chokeFadeMs = 25; // duracao do fade de choke (15-30 ms)
+
     juce::MixerAudioSource& mixerRef;
-    
-    //Variavel para guardar estado do mouse
+
+    // Variavel para guardar estado do mouse
     bool isMouseDown = false;
 
-    // Variável para controle de animação do brilho
+    // Variavel para controle de animacao do brilho
     float currentFade = 0.0f;
 
-    // Variável para guardar a cor
+    // Metadados vindos do kit
     juce::Colour activeColour;
+    juce::String noteName;
+    int chokeGroup = 0;
+    bool oneShot = false;
+    float baseGain = 1.0f;
 
-    void setupAudio(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse); // Função para organizar o carregamento do som
-    
+    // Invalida um chokeStop pendente quando o pad e reacionado dentro da janela de fade
+    int chokeToken = 0;
+
     juce::AudioFormatManager formatManager;
     std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
     juce::AudioTransportSource transportSource;
-    
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PadComponent)
 };

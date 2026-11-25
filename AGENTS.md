@@ -64,8 +64,9 @@ rítmica, melódica e harmônica, **sem exigir letramento musical prévio**.
     │   ├── Main.cpp                    # Entry point (JUCEApplication + MainWindow)
     │   ├── MainComponent.{h,cpp}       # Raiz: mixer global + navegação de telas
     │   ├── MenuComponent.{h,cpp}       # Menu principal
-    │   ├── PadGridComponent.{h,cpp}    # Grade 8x8 + backing track + JSON
-    │   ├── PadComponent.{h,cpp}        # Pad individual (sample + fade visual)
+    │   ├── PadGridComponent.{h,cpp}    # Páginas de pads + backing track + choke groups
+    │   ├── PadComponent.{h,cpp}        # Pad individual (sample, cor, playMode, fade visual)
+    │   ├── KitDefinition.{h,cpp}       # Parser/schema do kit (v2, retrocompatível com v1)
     │   └── SettingsComponent.{h,cpp}   # Mixer & Configurações (UI)
     ├── JuceLibraryCode/      # >>> GERADO PELO PROJUCER — não editar manualmente
     │   ├── JuceHeader.h
@@ -74,8 +75,18 @@ rítmica, melódica e harmônica, **sem exigir letramento musical prévio**.
     └── Arquivos_PucPads/     # Assets de origem
         ├── C.mp3 D.mp3 E.mp3 F.mp3 G.mp3
         ├── Musica_Jogo.wav
-        ├── notes.json        # kit "Melodia"
-        └── drumkit.json      # kit "Bateria"
+        ├── KIT_SCHEMA.md     # Especificação do schema v2 + navegação multi-páginas
+        ├── notes.json        # kit "Melodia" (páginas Melodia / Harmonia)
+        └── drumkit.json      # kit "Bateria" (páginas Loops / Efeitos)
+```
+
+Fora de `PucPads/`:
+
+```
+tools/
+├── validate_kits.py          # Valida schema/referências de áudio dos JSONs de kit
+├── kit_parser_smoke_test.cpp # Teste de fumaça do parser (executável de console)
+└── run_kit_parser_test.sh    # Compila e roda o teste acima com JUCE
 ```
 
 > ⚠️ `JuceLibraryCode/` e `Builds/` são **saída do Projucer**. Nunca edite `BinaryData.cpp/h`
@@ -125,15 +136,25 @@ PadGridComponent::backgroundSource ┘
 
 ### 4.3 Componentes
 
-- **`PadComponent`** (`Component` + `Timer`): carrega sample da memória (`BinaryData`), toca em
-  `mouseDown`, para em `mouseUp`, e anima *fade* da cor ativa a **60 Hz**
-  (`currentFade -= 0.05f`), produzindo o efeito neon. Semântica atual = **gate** (toca enquanto
-  pressionado), não *one-shot*.
-- **`PadGridComponent`**: lê o JSON do kit via `BinaryData::getNamedResource`, cria os
-  `PadComponent`s em `juce::OwnedArray`, carrega a *backing track* e faz o *layout* da grade
-  em `resized()`. Expõe `backButton`, `playButton`, `stopButton`.
-  - **`resized()` reserva uma `footerArea` de 70 px que hoje não é usada** — é o espaço previsto
-    para a futura navegação multi-páginas (RF01 / roadmap §6.2 do SDD).
+- **`KitDefinition`** (structs + parser, sem dependência de UI): lê o `juce::var` do kit e devolve
+  `pages[]` → `KitPad` (cor já resolvida, `chokeGroup`, `oneShot`, `gainDb`). Aceita **v2 e v1**.
+  Especificação completa em `PucPads/Arquivos_PucPads/KIT_SCHEMA.md`. É a única camada que conhece
+  o formato do arquivo — componentes de UI não fazem *parse* de JSON.
+- **`PadComponent`** (`Component` + `Timer`): recebe um `KitPad` + os bytes do sample
+  (`BinaryData`), toca em `mouseDown`, e anima *fade* da cor ativa a **60 Hz**
+  (`currentFade -= 0.05f`). Suporta dois modos (`playMode`):
+  - `gate` (default, comportamento histórico): para em `mouseUp`;
+  - `oneshot`: toca até o fim do sample; o brilho acompanha a duração.
+  Expõe `chokeStop()` (fade-out de 25 ms + stop) e o callback `onTriggered`.
+- **`PadGridComponent`**: carrega o kit via `KitDefinition`, cria **todos** os pads das páginas de
+  uma vez em `juce::OwnedArray<Page>`, carrega a *backing track* e faz o *layout* da página ativa.
+  Expõe `backButton`, `playButton`, `stopButton`.
+  - **`resized()`**: cabeçalho de 60 px, grade (`kit.columns × kit.rows`) e **rodapé de 70 px com
+    os botões de página** (RF01 — implementado; ver §6.2 e `KIT_SCHEMA.md` §10).
+  - **Choke groups (RF02)**: `handlePadTriggered()` interrompe os pads do mesmo grupo — inclusive
+    de outras páginas do mesmo kit — via `PadComponent::chokeStop()`.
+  - Trocar de página **não recria** `AudioTransportSource`s: apenas alterna visibilidade/layout e
+    interrompe samples da página que saiu.
 - **`MenuComponent`**: três `TextButton`s públicos (`kitMelodiaButton`, `kitBateriaButton`,
   `settingsButton`).
 - **`SettingsComponent`**: `masterVolumeSlider`, `backingTrackSlider` (vertical), labels e
@@ -149,6 +170,9 @@ O SDD §4.1 prevê estes componentes. Não os presuma implementados:
 | `PadEditorComponent` | Edição de volume, *pitch*, envelopes e choke groups |
 | `AudioRecorderComponent` | Captura de samples via microfone |
 | `KitSerializer` | Serialização/exportação de kits em JSON (e opcional `.zip`) |
+
+> Nota: **choke groups** já estão implementados em `PadGridComponent`/`PadComponent` e vêm do
+> JSON. O que falta do `PadEditorComponent` é a **edição** desses parâmetros pela UI.
 
 ---
 
@@ -173,36 +197,62 @@ Exemplos: `C.mp3` → `C_mp3`; `Musica_Jogo.wav` → `Musica_Jogo_wav`;
 > ⚠️ Ao adicionar um asset, registre-o no `PucPads.jucer` (`compile="0" resource="1"`) e
 > regenere pelo Projucer — senão ele **não** existe em `BinaryData`.
 
-### 5.2 Formato atual do JSON de kit
+### 5.2 Formato do JSON de kit (schema **v2**)
+
+Especificação completa: **`PucPads/Arquivos_PucPads/KIT_SCHEMA.md`**. Resumo:
 
 ```json
 {
-  "backingTrack": "Musica_Jogo.wav",
-  "pads": [
-    { "note": "Pad_1", "audioFile": "C.mp3", "color": "ffffd700" },
-    { "note": "Pad_2", "audioFile": "D.mp3", "color": "ffffc107" }
+  "schemaVersion": 2,
+  "kit": { "name": "Kit Melodia", "author": "PucPads",
+           "description": "...", "backingTrack": "Musica_Jogo.wav" },
+  "grid": { "columns": 8, "rows": 8 },
+  "pages": [
+    { "name": "Melodia", "pads": [
+        { "note": "C", "audioFile": "C.mp3", "function": "melodia", "playMode": "gate" },
+        { "note": "D", "audioFile": "D.mp3", "function": "melodia", "playMode": "gate" }
+    ] }
   ]
 }
 ```
 
-- `backingTrack`: nome do arquivo da faixa base (opcional).
-- `pads[]`: ordem de exibição (preenchimento por linha, 8 colunas).
-- `color`: **ARGB hex** lido por `juce::Colour::fromString` (ex.: `ffffd700` dourado;
-  `ff420012` bordô).
-- `note`: hoje é apenas um rótulo; **não** há mapeamento MIDI real.
+| Campo do pad | Efeito |
+| --- | --- |
+| `audioFile` | **Obrigatório**; nome do asset (mangling `.` → `_`). |
+| `note` | Rótulo curto desenhado no pad. |
+| `function` | `efeito`/`loop`/`melodia`/`harmonia` → cor pela paleta (§6.2). |
+| `color` | ARGB hex; **tem prioridade** sobre `function`. |
+| `playMode` | `gate` (default) ou `oneshot`. |
+| `chokeGroup` | `0`/ausente = sem grupo; `> 0` = exclusão mútua. |
+| `gainDb` | Ganho individual (−60…+12 dB; default `0`). |
 
-**Evolução prevista (RF06 / roadmap):** o schema ganhará metadados de kit —
-`nome do kit`, `nome da música (playback)` e `nome do autor/usuário` — além do mapeamento de
-pads. Ao implementar `KitSerializer`, mantenha **retrocompatibilidade** com os JSONs atuais
-(campos novos opcionais) ou versione o schema explicitamente.
+Regras que **não** podem ser quebradas:
+- Ordem dos pads = ordem de exibição (linha a linha).
+- `schemaVersion` ausente ⇒ arquivo é tratado como v1.
+- Campos desconhecidos são ignorados (permite evoluir sem quebrar leitor antigo).
+- **`BinaryData` precisa ser regenerado no Projucer** depois de qualquer edição de JSON (§5.4).
 
 ### 5.3 Estado dos kits e Git LFS
 
-- `notes.json` e `drumkit.json` são **byte a byte idênticos** (64 pads cada, mesmos samples
-  C–G e mesma *backing track*). O "Kit Bateria" ainda não difere do "Kit Melodia".
+- `notes.json` (Kit Melodia): páginas **Melodia** (`melodia`/gate) e **Harmonia**
+  (`harmonia`/one-shot/choke group 1), 64 pads cada.
+- `drumkit.json` (Kit Bateria): páginas **Loops** (`loop`/one-shot/choke group 2) e **Efeitos**
+  (`efeito`/one-shot), 64 pads cada.
+- Os dois kits usam **os mesmos 5 samples** (C–G, placeholders) — a diferença hoje é
+  organizacional/semântica, não de conteúdo sonoro. Samples reais são débito de conteúdo (§13.2).
 - `.gitattributes` marca `*.mp3`, `*.wav`, `*.aiff` como **Git LFS**. No working tree esses
   arquivos são *ponteiros* (~130 bytes); os bytes reais estão em `BinaryData.cpp` (comitado, ~47 MB).
 - Para ouvir/inspecionar os samples reais: `git lfs pull`. O **build não depende** de LFS.
+
+### 5.4 Após editar qualquer JSON de kit
+
+O app lê os bytes **embutidos**, não o arquivo em disco:
+
+1. `python3 tools/validate_kits.py` (schema + assets);
+2. abrir `PucPads.jucer` no Projucer e **Save Project** (regenera `BinaryData.cpp/h`);
+3. rebuild no IDE.
+
+Sem o passo 2 o app continua lendo o kit antigo — sintoma clássico de "mudei e nada mudou".
 
 ---
 
@@ -223,23 +273,27 @@ RNF03 do SDD define *Dark Mode* de alto contraste na paleta institucional PUCPR:
 | Dourado âmbar | `ffffc107` |
 | Borda dourada dos pads | `ffb08d35` |
 
-### 6.2 Semântica de cores dos pads (RF04 — **alvo**, ainda não aplicada)
+### 6.2 Semântica de cores dos pads (RF04 — **implementada**)
 
-O SDD define um código de cores pedagógico para os pads:
+O SDD define um código de cores pedagógico. Ele é resolvido pelo parser
+(`KitDefinition::colourForFunction`) e usado pelo `PadComponent`:
 
-| Cor | Função musical |
-| --- | --- |
-| **Verde** | Efeitos (SFX) |
-| **Azul** | Loops |
-| **Rosa** | Melodia |
-| **Laranja** | Harmonia |
+| Cor | Função musical | Hex |
+| --- | --- | --- |
+| **Verde** | Efeitos (SFX) | `ff2ecc71` |
+| **Azul** | Loops | `ff1e90ff` |
+| **Rosa** | Melodia | `ffff4fa3` |
+| **Laranja** | Harmonia | `ffff8c1a` |
+| *Fallback* | Sem `function` (ou desconhecida) | `ffffd700` (dourado institucional) |
 
-> ⚠️ **Divergência consciente:** os kits atuais usam apenas dourado/âmbar/branco
-> (`ffffd700`, `ffffc107`, `ffffffff`) tanto para cromo quanto para pads. Migrar os pads para a
-> paleta semântica **altera a identidade visual dos kits existentes** e é item de roadmap
-> (SDD §6.2). Não faça essa troca "de passagem" dentro de outra tarefa: trate-a como mudança
-> própria, validada com o responsável pelo produto, e atualize os JSONs **e** a documentação
-> no mesmo commit.
+Precedência: **`color` explícito** > `function` > fallback dourado. Ou seja, um pad pode manter uma
+cor fora da paleta sem perder a classificação funcional.
+
+> ⚠️ `juce::Colour::fromString` espera **ARGB** (`AARRGGBB`), não `RGBA`. O alfa vem primeiro
+> (`ff` = opaco). Erro aqui gera cor transparente/quase preta, não erro de compilação.
+>
+> ⚠️ O cromo institucional (bordô `ff420012`, dourado `ffffd700`, borda `ffb08d35`) continua
+> valendo para **moldura/botões**. As cores semânticas são apenas o preenchimento ativo dos pads.
 
 ---
 
@@ -265,9 +319,14 @@ Siga de perto o **estilo padrão do JUCE** (é o que o projeto usa):
 
 - **Nada de alocação dinâmica, locks ou I/O dentro do `getNextAudioBlock()`.** Prepare fontes em
   `prepareToPlay`/construtor e apenas misture no *callback*.
-- Ao implementar *fade-out* de choke group (15–30 ms), faça o ganho ser aplicado **na thread de
-  áudio** (ex.: `AudioTransportSource`/`Gain` interno ou envelope próprio lido do buffer), nunca
-  com `Timer` de UI.
+- Ao implementar *fade-out* de choke group (15–30 ms), faça o ganho ser aplicado **no caminho de
+  áudio**, nunca com um `Timer` de UI controlando o volume amostra a amostra.
+  - Implementação atual: `PadComponent::chokeStop()` chama `transportSource.setGain(0)` (o
+    `AudioTransportSource` aplica o ganho com rampa interna de 1 bloco) e agenda o `stop()` real
+    ~25 ms depois via `juce::Timer::callAfterDelay`. É um *fade* de granularidade de bloco
+    (~5–10 ms), suficiente para eliminar *clicks*, mas **não** é um envelope amostra a amostra.
+  - Se o produto exigir *fade* exato, a evolução é um `AudioSource` próprio com
+    `juce::LinearSmoothedValue` por voz (débito em §13.2).
 - Revisar `setAudioChannels(0, 2)` apenas quando a captura por microfone (RF05) for implementada;
   ao mudar, valide que `prepareToPlay` continua sendo chamado em ambas as plataformas.
 
@@ -305,12 +364,20 @@ Siga de perto o **estilo padrão do JUCE** (é o que o projeto usa):
 
 ### 8.3 Limitação do sandbox de agente (DevBox)
 
-O container (`devbox-base`) **não** tem JUCE, Projucer, MSVC nem NDK. Portanto:
+O container (`devbox-base`) **não** traz JUCE, Projucer, MSVC nem NDK. O build oficial do app
+continua dependendo de Projucer + IDE. O que **é** possível validar aqui:
 
-- **Não é possível buildar o app** dentro do sandbox.
-- Validável aqui: estrutura do `.jucer` vs. recursos, integridade dos JSONs de kit, revisão
-  estática de C++ (`g++ -fsyntax-only` só com *stubs*, e sem valor probatório), `git` e docs.
-- **Nunca** declare "compila e funciona" sem build real na IDE — relate como não validado.
+| Verificação | Como |
+| --- | --- |
+| Dados dos kits | `python3 tools/validate_kits.py` |
+| Parser C++ de verdade | `JUCE_DIR=... ./tools/run_kit_parser_test.sh` (clona/baixa JUCE 8 + libs de sistema) |
+| Compilação dos componentes de UI | `g++ -c -fsyntax-only` com `-I PucPads/JuceLibraryCode -I $JUCE/modules` |
+| Estrutura do `.jucer`, docs, git | inspeção |
+
+- O teste do parser **executa código real** (não é *stub*) e já foi usado para validar o schema
+  v2 + compatibilidade v1.
+- O binário do app (GUI + ALSA/Android) **não** é gerado aqui: exigiria o *build* completo do
+  projeto pelo Projucer. **Nunca** declare "compila e funciona na IDE" sem build real.
 
 ---
 
@@ -319,34 +386,44 @@ O container (`devbox-base`) **não** tem JUCE, Projucer, MSVC nem NDK. Portanto:
 ### Adicionar um sample/pad
 1. Arquivo em `PucPads/Arquivos_PucPads/`.
 2. Registre no `PucPads.jucer` (`compile="0" resource="1"`).
-3. Referencie no JSON (`"audioFile": "Novo.mp3"`).
-4. Regenere no Projucer e recompile.
+3. Referencie no JSON (`"audioFile": "Novo.mp3"`) na página desejada.
+4. `python3 tools/validate_kits.py` → **Save no Projucer** → recompile.
 
 ### Criar um novo kit
-1. Copie `notes.json` → `NovoKit.json` em `Arquivos_PucPads/`.
-2. Ajuste `backingTrack` e `pads`.
+1. Copie `drumkit.json` → `NovoKit.json` em `Arquivos_PucPads/`.
+2. Ajuste `kit`, `grid`, `pages` e os pads (schema em `KIT_SCHEMA.md`).
 3. Registre no `.jucer` e regenere.
 4. Em `MainComponent`, crie o botão no menu e chame `showPadScreen("NovoKit_json")`
    (lembre do *mangling* `.` → `_`).
 
+### Adicionar uma página a um kit existente
+- Acrescente um objeto `{ "name": "...", "pads": [...] }` em `pages`.
+- `name` deve ser único e curto (vira rótulo do botão do rodapé).
+- Nenhuma mudança de código é necessária: o número de botões é derivado de `pages.size()`.
+- Cada página suporta até `grid.columns × grid.rows` pads.
+
 ### Ajustar a grade de pads
-A geometria está em `PadGridComponent::resized()`. O *layout* assume **8 colunas × 8 linhas**
-fixas e só desenha os pads existentes (`for i < pads.size()`). Alterar `numCols`/`numRows`
-muda a densidade. O cabeçalho tem 60 px e o **rodapé reserva 70 px** (ainda sem uso).
+A geometria está em `PadGridComponent::layoutPage()`. Agora ela usa **`kit.columns`/`kit.rows`**
+(default 8 × 8, vindos do JSON) e só posiciona os pads existentes. Cabeçalho: 60 px;
+rodapé de navegação: 70 px. Para mudar a densidade, prefira editar o `grid` do JSON a mexer no
+código.
 
-### Implementar navegação multi-páginas (RF01)
-- O espaço do rodapé já está reservado em `resized()`.
-- Sugestão de desenho: manter `pads` como array plano e calcular a página visível no *layout*,
-  ou criar um contêiner de página por banco. Evite recriar `AudioTransportSource`s a cada troca
-  de página (custo/latência); idealmente carregue o banco uma vez e apenas reposicione/ative.
+### Navegação multi-páginas (RF01) — **implementado**
+- `KitDefinition` entrega `pages[]`; `PadGridComponent` cria um `Page` (`OwnedArray<PadComponent>`)
+  por página em `buildPages()`, gera um botão por página em `buildPageButtons()` e alterna em
+  `showPage(i)`.
+- Trocas **não** recriam `AudioTransportSource`s — apenas `setVisible` + `layoutPage()`.
+- A aba ativa é sinalizada invertendo bordô/dourado (§6.1); kits de página única não mostram botões.
+- Ao estender (ex.: gesto de swipe, indicador "2/5"), mantenha `showPage()` como único ponto de
+  troca de estado.
 
-### Implementar choke groups (RF02)
-- Modelo: `int chokeGroup` por pad (vindo do JSON) + registro, no `PadGridComponent`, de qual pad
-  está tocando por grupo. Ao acionar outro pad do mesmo grupo, aplicar *fade-out* de 15–30 ms
-  no anterior e iniciar o novo.
+### Choke groups (RF02) — **implementado**
+- `chokeGroup` vem do JSON; o escopo é o **kit inteiro** (não só a página visível).
+- `PadGridComponent::handlePadTriggered()` interrompe os demais pads do grupo *antes* de o pad
+  disparado começar a tocar (evita o auto-choke).
+- `PadComponent::chokeStop()` faz o *fade* e agenda o `stop()`; um `chokeToken` invalida o stop
+  pendente se o pad for reacionado dentro da janela de *fade*.
 - **Sem limite de 6 grupos** (diferencial declarado vs. concorrente).
-- O *fade-out* deve ser no caminho de áudio (ver §7.1). Extensão de schema precisa ser
-  retrocompatível (`"chokeGroup"` opcional, `0` = sem grupo).
 
 ---
 
@@ -357,31 +434,37 @@ implementar.
 
 | Req. | Descrição resumida | Onde está / onde vai |
 | --- | --- | --- |
-| RF01 | Disparo polifônico + múltiplas páginas | Polifonia: `MixerAudioSource` (feito). Páginas: **planejado** em `PadGridComponent` (rodapé reservado) |
-| RF02 | Choke groups ilimitados, fade-out 15–30 ms | **A implementar** (`PadComponent` + `PadGridComponent` + JSON) |
-| RF03 | Pad Editor (volume, pitch, envelopes, trim, clonar/remover) | **A implementar** (`PadEditorComponent`, `juce::ResamplingAudioSource`) |
-| RF04 | Cores semânticas por função musical | **Divergente hoje** — ver §6.2; afeta JSONs + `PadComponent` |
+| RF01 | Disparo polifônico + múltiplas páginas | Polifonia: `MixerAudioSource` (feito). Páginas: **feito** — `KitDefinition::pages` + `PadGridComponent::showPage()` + botões no rodapé |
+| RF02 | Choke groups ilimitados, fade-out 15–30 ms | **Feito** — `KitPad::chokeGroup` → `PadGridComponent::handlePadTriggered()` → `PadComponent::chokeStop()` (fade de 1 bloco + stop em 25 ms) |
+| RF03 | Pad Editor (volume, pitch, envelopes, trim, clonar/remover) | **A implementar** (`PadEditorComponent`, `juce::ResamplingAudioSource`). `gainDb` por pad já é lido do JSON |
+| RF04 | Cores semânticas por função musical | **Feito** — `KitDefinition::colourForFunction()` + `function`/`color` no JSON (§6.2) |
 | RF05 | Importar arquivos e gravar pelo microfone | **A implementar** (`juce::FileChooser`; gravação WAV; revisar `setAudioChannels`) |
-| RF06 | Backing track + salvar kits em JSON com metadados | Backing track: feito. Serialização: **`KitSerializer` a implementar** |
+| RF06 | Backing track + salvar kits em JSON com metadados | Backing track: feito. Metadados (`kit.name/author/description`): **feito** no schema v2. Serialização/export (`KitSerializer`): **a implementar** |
 | RF07 | MIDI externo + compartilhamento de kits | **A implementar** (nenhum código MIDI hoje) |
 | RNF01 | Baixa latência | Manter `MixerAudioSource`/buffers; não alocar na thread de áudio |
 | RNF02 | Multiplataforma + multitouch | `resized()` dinâmico; `mouseDown/Up` já respondem a múltiplos ponteiros |
 | RNF03 | Dark Mode bordô/dourado | Cores em `MenuComponent`, `PadGridComponent`, `SettingsComponent`, `PadComponent` |
-| RNF04 | Gestão segura de memória | `unique_ptr`, `OwnedArray`, `removeInputSource` nos destrutores |
+| RNF04 | Gestão segura de memória | `unique_ptr`, `OwnedArray`, `removeInputSource` nos destrutores, `SafePointer` no *fade* assíncrono |
 
 ---
 
 ## 11. Testes e Verificação
 
-- **Não existe** suíte de testes automatizados nem CI.
-- Verificação atual é **manual**: compilar na IDE e testar interação (clique/multitouch) no
-  desktop e no Android.
-- Se for introduzir testes, prefira **`juce::UnitTest`** (nativo) para lógica pura — parser de
-  JSON de kit, conversão de cores, cálculo de *layout* de páginas. **Combine antes** de adicionar
-  frameworks de teste de terceiros.
-- Checklist mínimo antes de entregar: carregar os dois kits; disparar pads (simultâneos);
+Não existe CI nem suíte rodando na IDE, mas há **duas verificações automatizadas** em `tools/`:
+
+| Comando | Cobre | Roda no sandbox? |
+| --- | --- | --- |
+| `python3 tools/validate_kits.py` | schema, `audioFile` existente, faixas de `gainDb`/`chokeGroup`, nomes de página duplicados, capacidade da grade, paleta | ✅ |
+| `JUCE_DIR=... ./tools/run_kit_parser_test.sh` | parser C++ real: kits atuais, regras de cor, `playMode`, `chokeGroup`, `gainDb`, grade customizada, descarte de pad inválido, **compatibilidade v1** | ✅ (requer baixar JUCE + libs) |
+
+- **Adicione caso de teste** ao `kit_parser_smoke_test.cpp` sempre que o schema ganhar campo novo.
+  Ele é um alvo de console (módulos core/events/graphics), não faz parte do binário do app.
+- Verificação **manual** continua necessária para UI/áudio: compilar na IDE e testar
+  clique/multitouch no desktop e no Android.
+- Checklist mínimo antes de entregar: carregar os dois kits; trocar de página com sample tocando
+  (o som deve ser interrompido); disparar pads do mesmo choke group em sequência (sem *click*);
   play/stop da *backing track*; navegar entre as três telas e voltar; sem *crash* ao trocar de
-  kit/página repetidamente (verifique vazamentos com o *leak detector* do JUCE em Debug).
+  kit/página repetidamente (leak detector do JUCE em Debug).
 
 ---
 
@@ -405,8 +488,10 @@ implementar.
 ## 13. Roadmap Técnico e Débitos Conhecidos
 
 ### 13.1 Próximas sprints (SDD §6.2) — prioridade oficial
-1. **Navegação multi-páginas + semântica de cores** nos kits padrão.
-2. **Motor de choke groups** (ilimitado, *fade-out* 15–30 ms sem *clicks*).
+1. ~~**Navegação multi-páginas + semântica de cores** nos kits padrão.~~ ✅ **Concluído**
+   (schema v2, `PadGridComponent::showPage()`, paleta RF04 nos dois kits).
+2. ~~**Motor de choke groups** (ilimitado, *fade-out* 15–30 ms sem *clicks*).~~ ✅ **Concluído**
+   (fade de ~1 bloco + stop agendado; envelope amostra a amostra segue como débito §13.2.5).
 3. **Pad Editor:** faders reais (Master, Backing, volume por pad), *pitch* em tempo real,
    envelopes, clonar/remover/trim.
 4. **Criação de conteúdo:** importação por `juce::FileChooser` e gravação via microfone.
@@ -415,23 +500,28 @@ implementar.
 
 ### 13.2 Débitos e armadilhas verificados no código atual
 1. **Sliders de `SettingsComponent` sem efeito** — UI apenas; ligação ao mixer é pendente (RF03).
-2. **`notes.json` == `drumkit.json`** — kits idênticos; "Kit Bateria" deveria diferir.
-3. **Cores dos pads fora da semântica RF04** (dourado/âmbar), ver §6.2.
+   `KitPad::gainDb` já existe no schema; falta a UI de edição.
+2. **Conteúdo dos kits continua genérico** — as páginas agora diferem em função/choke group, mas
+   os dois kits ainda usam os mesmos 5 samples (C–G). Falta material sonoro real de bateria/loops.
+3. **Todas as páginas são instanciadas no load** — 128 `AudioTransportSource` por kit hoje são
+   inofensivos (samples de 45 KB). Com kits reais e muitas páginas, migrar para *pool de vozes*
+   com carga por página (§`KIT_SCHEMA.md` §15).
 4. **`BinaryData.cpp` com ~47 MB comitado** — infla o repositório; avaliar regeneração fora do
    git ou LFS.
-5. **Semântica de disparo é *gate*** (`mouseUp` → `transportSource.stop()`) — há comentário no
-   código sobre "modo Gate". Definir com o produto se pads melódicos devem ser *one-shot*.
+5. **Fade de choke é de granularidade de bloco** (`setGain` + stop em 25 ms), não envelope
+   amostra a amostra. Aceitável hoje; revisar se houver requisito de precisão.
 6. **Ciclo de vida assimétrico das telas:** `showMenuScreen()` **destrói** a `padGridScreen`
    (`reset()`) a cada retorno, mas `settingsScreen` é criada uma única vez e **nunca** é
-   destruída (apenas escondida) — daí o `addAndMakeVisible` em toda entrada. Ao conectar os
-   sliders ao mixer (RF03), cuidado para não acumular listeners/estado em `settingsScreen`,
-   e lembre que os `AudioTransportSource` dos pads são recriados a cada entrada na grade.
-7. **Comentário corrompido em `PadGridComponent.h`** (`// O mixer \tma referencia...`) — corrigir
-   ao tocar no arquivo.
+   destruída (apenas escondida) — daí o `addAndMakeVisible` em toda entrada. Consequência: sair
+   da grade **recria todos os pads e recarrega o áudio** na próxima entrada.
+7. **`playMode` é por pad, não por kit** — se o produto definir um modo global por kit, avaliar
+   um `kit.defaultPlayMode` (aditivo, retrocompatível).
 8. **MODULEPATH inconsistente no `.jucer`** (ver §8).
-9. **Parser JSON sem validação de campos** — `audioFile`/`color` ausentes não têm tratamento
-   explícito; `pads` inexistente apenas gera zero pads. Robustecer ao evoluir o schema (RF06).
-10. **Sem CI/testes** — toda refatoração depende de validação manual.
+9. **Parser valida estrutura, não conteúdo sonoro** — `audioFile` inexistente é descartado com
+   `DBG`, mas a UI não avisa o usuário que um pad "sumiu". Considerar indicador visual de pad
+   inválido no Pad Editor.
+10. **Sem CI** — as verificações de `tools/` são locais (executáveis, mas ninguém as roda
+    automaticamente). Um workflow simples de CI cobrindo `validate_kits.py` é barato.
 
 ---
 
@@ -448,10 +538,14 @@ implementar.
 6. **Nunca** atue em branches protegidas; use branch de trabalho + push.
 7. **Nunca** exponha segredos (tokens, senhas, chaves). Não há segredos no repo — mantenha assim.
 8. **Idioma:** comentários, commits e UI em **português**.
-9. **Cores:** cromo institucional bordô/dourado permanece (RNF03); pads migram para a semântica
-   RF04 **somente** em tarefa dedicada e documentada.
-10. **Áudio:** nada de alocação/lock no `getNextAudioBlock()`; fades em tempo de áudio.
-11. **Deixe rastro:** ao finalizar, reporte workspace ID, branch, commit e status do push.
+9. **Cores:** cromo institucional bordô/dourado permanece (RNF03); pads usam a semântica RF04
+   (`function` da paleta) com possibilidade de override por `color` — não "endureça" hex solto
+   no código de UI: cor de pad vem do kit.
+10. **Áudio:** nada de alocação/lock no `getNextAudioBlock()`; fades no caminho de áudio.
+11. **Schema de kit:** qualquer campo novo deve ser **opcional com default** e coberto por caso
+    no `tools/kit_parser_smoke_test.cpp` + `tools/validate_kits.py`. Nunca remova campo existente
+    sem versionar.
+12. **Deixe rastro:** ao finalizar, reporte workspace ID, branch, commit e status do push.
 
 ---
 
@@ -459,5 +553,6 @@ implementar.
 
 | Data | Commit base do SDD | Mudanças |
 | --- | --- | --- |
+| 2026-11-25 | `5740be2` (*Revisão README*) | **Schema v2 + multi-páginas + choke groups:** novo `KitDefinition` (parser retrocompatível v1↔v2), páginas com botões no rodapé (§4.3/§9), paleta RF04 aplicada (§6.2), guias de edição de kit e regeneração de `BinaryData` (§5.2–§5.4), verificações automatizadas em `tools/` (§11), roadmap/débitos atualizados (§13) |
 | 2026-11-25 | `5740be2` (*Revisão README*) | Revisão completa: enquadramento PIBITI, RF/RNF renumerados, semântica de cores RF04 (§6), módulos planejados (`PadEditorComponent`, `AudioRecorderComponent`, `KitSerializer`), tabela de rastreabilidade requisito↔código (§10), diretrizes de áudio em tempo real (§7.1), roadmap oficial (§13.1) e guias para choke groups/multi-páginas (§9) |
 | 2026-11-24 | `c194cc7` | Criação inicial do guia (arquitetura, assets/`BinaryData`, build, convenções, débitos) |

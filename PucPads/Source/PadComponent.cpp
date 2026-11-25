@@ -2,12 +2,34 @@
 #include "PadComponent.h"
 
 //==============================================================================
-PadComponent::PadComponent(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse, juce::Colour padColour)
-    : mixerRef(mixerToUse)
-    
+namespace
 {
-    activeColour = padColour;
+    KitPad makeColourOnlySpec (juce::Colour colour)
+    {
+        KitPad spec;
+        spec.colour = colour;
+        return spec;
+    }
+}
+
+//==============================================================================
+PadComponent::PadComponent(const KitPad& padSpec, const char* soundData, int soundDataSize,
+                           juce::MixerAudioSource& mixerToUse)
+    : mixerRef(mixerToUse)
+{
+    activeColour = padSpec.colour;
+    noteName     = padSpec.note;
+    chokeGroup   = padSpec.chokeGroup;
+    oneShot      = padSpec.oneShot;
+    baseGain     = juce::Decibels::decibelsToGain (padSpec.gainDb);
+
     setupAudio(soundData, soundDataSize, mixerToUse);
+}
+
+PadComponent::PadComponent(const char* soundData, int soundDataSize,
+                           juce::MixerAudioSource& mixerToUse, juce::Colour padColour)
+    : PadComponent(makeColourOnlySpec(padColour), soundData, soundDataSize, mixerToUse)
+{
 }
 
 PadComponent::~PadComponent()
@@ -22,7 +44,7 @@ void PadComponent::paint (juce::Graphics& g)
     juce::Colour corFundoInativo = juce::Colour::fromString("ff420012");
     juce::Colour corBordaInativa = juce::Colour::fromString("ffb08d35");
 
-    // A MÁGICA DA COR: Mistura o fundo inativo com a cor Neon baseada no "currentFade"
+    // A MAGICA DA COR: Mistura o fundo inativo com a cor Neon baseada no "currentFade"
     juce::Colour corAtual = corFundoInativo.interpolatedWith(activeColour, currentFade);
 
     g.fillAll(corAtual);
@@ -32,6 +54,15 @@ void PadComponent::paint (juce::Graphics& g)
     g.setColour(currentFade > 0.8f ? juce::Colours::white : corBordaInativa);
 
     g.drawRoundedRectangle(getLocalBounds().reduced(1).toFloat(), 4.0f, 1.5f);
+
+    // Rotulo do pad (ex.: "C", "D"), util na pagina de melodia. Fica oculto em pads minusculos.
+    if (noteName.isNotEmpty() && getWidth() > 34 && getHeight() > 22)
+    {
+        g.setColour(juce::Colours::white.withAlpha(0.85f));
+        g.setFont(juce::Font(juce::FontOptions(11.0f)));
+        g.drawText(noteName, getLocalBounds().reduced(4, 2),
+                   juce::Justification::centredBottom, false);
+    }
 }
 
 void PadComponent::resized()
@@ -41,25 +72,40 @@ void PadComponent::resized()
 void PadComponent::mouseDown (const juce::MouseEvent& event)
 {
     isMouseDown = true;
-    
-    // Força o brilho para o máximo instantaneamente
+
+    // Forca o brilho para o maximo instantaneamente
     currentFade = 1.0f;
     stopTimer();
 
-    transportSource.setPosition(0); // Rebobina o som para o início
+    // Reativa um choke pendente: o stop agendado nao deve atingir este novo disparo
+    ++chokeToken;
+
+    // Resolve os choke groups ANTES de tocar, para nao cortar o proprio pad
+    if (onTriggered != nullptr)
+        onTriggered(this);
+
+    transportSource.setPosition(0);   // Rebobina o som para o inicio
+    transportSource.setGain(baseGain);
     transportSource.start();          // Toca o som
-    
+
+    if (oneShot)
+        startTimerHz(60);             // acompanha o fim do sample para apagar o brilho
+
     repaint();
 }
 
 void PadComponent::mouseUp (const juce::MouseEvent& event)
 {
     isMouseDown = false;
-    
-    // Inicia a animação a 60 quadros por segundo (60 Hz)
+
+    if (! oneShot)
+    {
+        transportSource.stop();
+        transportSource.setGain(baseGain);
+    }
+
+    // Inicia a animacao a 60 quadros por segundo (60 Hz)
     startTimerHz(60);
-    
-    transportSource.stop();
     repaint();
 }
 
@@ -73,31 +119,74 @@ void PadComponent::mouseExit(const juce::MouseEvent& event)
     }
 }
 
+void PadComponent::chokeStop()
+{
+    const int token = ++chokeToken;
+
+    if (! transportSource.isPlaying())
+    {
+        currentFade = 0.0f;
+        repaint();
+        return;
+    }
+
+    // O AudioTransportSource aplica setGain com rampa interna, o que evita o clique
+    // de um corte seco; o stop efetivo vem um instante depois.
+    transportSource.setGain(0.0f);
+
+    juce::Component::SafePointer<PadComponent> safeThis(this);
+    juce::Timer::callAfterDelay(chokeFadeMs, [safeThis, token]() mutable
+    {
+        if (auto* pad = safeThis.getComponent())
+            if (pad->chokeToken == token)
+                pad->finishChokeStop();
+    });
+}
+
+void PadComponent::finishChokeStop()
+{
+    transportSource.stop();
+    transportSource.setGain(baseGain);
+
+    stopTimer();
+    currentFade = 0.0f;
+    repaint();
+}
+
 void PadComponent::setupAudio(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse)
 {
-    // 1. Registrar os formatos de áudio
+    // 1. Registrar os formatos de audio
     formatManager.registerBasicFormats();
-    
-    // 2. Criar um "leitor" para o som a partir da memória
+
+    // 2. Criar um "leitor" para o som a partir da memoria
     auto* reader = formatManager.createReaderFor(std::make_unique<juce::MemoryInputStream>(soundData, soundDataSize, false));
-    
+
     if (reader != nullptr)
     {
         // 3. Conectar o leitor ao "toca-fitas"
         std::unique_ptr<juce::AudioFormatReaderSource> newSource (new juce::AudioFormatReaderSource (reader, true));
         transportSource.setSource (newSource.get(), 0, nullptr, reader->sampleRate);
         readerSource.reset (newSource.release());
-		mixerToUse.addInputSource(&transportSource, false);
+        transportSource.setGain(baseGain);
+        mixerToUse.addInputSource(&transportSource, false);
     }
     else
     {
-        DBG("ERRO: Falha ao carregar o arquivo de áudio!");
+        DBG("ERRO: Falha ao carregar o arquivo de audio!");
     }
 }
 
 void PadComponent::timerCallback()
 {
-    // Reduz o brilho (0.05 por frame = fade rápido. Mude para 0.02 para fade lento)
+    // Modo one-shot: o brilho acompanha a duracao real do sample antes de apagar
+    if (oneShot && transportSource.isPlaying() && ! transportSource.hasStreamFinished())
+    {
+        currentFade = 1.0f;
+        repaint();
+        return;
+    }
+
+    // Reduz o brilho (0.05 por frame = fade rapido. Mude para 0.02 para fade lento)
     currentFade -= 0.05f;
 
     if (currentFade <= 0.0f)
@@ -106,5 +195,5 @@ void PadComponent::timerCallback()
         stopTimer();        // Desliga o timer para economizar CPU
     }
 
-    repaint(); // Pede para desenhar a nova cor intermediária
+    repaint(); // Pede para desenhar a nova cor intermediaria
 }

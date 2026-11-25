@@ -18,6 +18,10 @@
       <FILE id="Owferc" name="PadComponent.cpp" compile="1" resource="0"
             file="Source/PadComponent.cpp"/>
       <FILE id="c8SCgT" name="PadComponent.h" compile="0" resource="0" file="Source/PadComponent.h"/>
+      <FILE id="KtDf1h" name="KitDefinition.h" compile="0" resource="0"
+            file="Source/KitDefinition.h"/>
+      <FILE id="KtDf2c" name="KitDefinition.cpp" compile="1" resource="0"
+            file="Source/KitDefinition.cpp"/>
       <FILE id="mSOUcY" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="kZyiBL" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
