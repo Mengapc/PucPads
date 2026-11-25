@@ -3,558 +3,194 @@
 ## 1. Introdução
 
 ### 1.1 Propósito
-
-Descrever o projeto PucPads, um software musical para performance e criação, que será utilizado no curso de Bacharelado em Produção Musical.
+Descrever a arquitetura, os requisitos técnicos e o plano de evolução do **PucPads**, um software musical de alta performance desenvolvido em C++/JUCE como projeto de Iniciação Científica Tecnológica (PIBITI – PUCPR), voltado ao apoio pedagógico e à performance ao vivo no curso de Bacharelado em Produção Musical.
 
 ### 1.2 Escopo
-
-O sistema tem como objetivo substituir o SuperPads Lights, aplicativo descontinuado, fornecendo aos estudantes uma plataforma estável, funcional e adaptável para prática, performance e criação musical.
+Substituir o aplicativo descontinuado *SuperPads Lights*, oferecendo aos estudantes e professores uma plataforma multiplataforma estável, de baixa latência e pedagogicamente adaptada. O sistema atua como instrumento facilitador visual e tátil para o ensino de percepção rítmica, melódica e harmônica, superando barreiras do modelo conservatorial tradicional sem exigir letramento musical prévio.
 
 ### 1.3 Definições, Acrônimos e Abreviações
+- **MIDI:** *Musical Instrument Digital Interface* (protocolo de comunicação entre controladoras e softwares musicais).
+- **DAW:** *Digital Audio Workstation*.
+- **Choke Group (Grupo de Exclusão Mútua):** Agrupamento lógico no qual o disparo de um pad interrompe suavemente (via *fade-out* rápido) o áudio de outro pad pertencente ao mesmo grupo.
+- **Launchpad:** Controladora física baseada em matriz de pads utilizada para performance e disparo de samples.
 
-**MIDI**: Musical Instrument Digital Interface
-
-**DAW**: Digital Audio Workstation
-
-**Launchpad**: Controladora musical baseada em pads, usada para performance ao vivo e integração com softwares de música.
-
-### 1.4 Referências
-
+### 1.4 Referências de Mercado
 <img width="48" height="48" alt="unnamed" src="https://github.com/user-attachments/assets/cc9f5b2f-06dd-46e9-900d-9df1c8ba53d5" />  
 
-SuperPads Lights (Opala Studios, até 2022)
+**SuperPads Lights** (Opala Studios, descontinuado em 2022) – [Play Store](https://play.google.com/store/apps/details?id=com.opalastudios.superlaunchpad)
 
-[Link na Play Store](https://play.google.com/store/apps/details?id=com.opalastudios.superlaunchpad)
-
--------------------------------------------------------------------------------------------------------------------------------------
 <img width="48" height="48" alt="unnamed (1)" src="https://github.com/user-attachments/assets/4285c2d0-9c93-4841-b225-dbf9cbdcc3af" />
 
-SUPER PADS DJ: Music & Beats 
-
-[Link na Play Store](https://play.google.com/store/apps/details?id=com.opalastudios.pads&pli=1)
+**SUPER PADS DJ: Music & Beats** – [Play Store](https://play.google.com/store/apps/details?id=com.opalastudios.pads&pli=1)
 
 ---
 
-## 2. Visão Geral do Sistema
+## 2. Visão Geral do Sistema e Fundamentação Pedagógica
 
-### 2.1 Contexto
+### 2.1 Contexto e Justificativa
+Com a descontinuidade do *SuperPads Lights*, perdeu-se uma ferramenta acessível utilizada nas atividades práticas do curso de Produção Musical. O PucPads preenche essa lacuna combinando o motor de áudio profissional do framework JUCE com funcionalidades desenhadas especificamente para o contexto acadêmico e criativo.
 
-O aplicativo referência perdeu suporte, tornando-se inviável para uso acadêmico. Surge a necessidade de uma ferramenta própria para manter a prática pedagógica.
+### 2.2 Usuários-Alvo
+- Estudantes dos cursos de Bacharelado em Produção Musical e Jogos Digitais (PUCPR).
+- Professores e monitores em atividades de musicalização, percepção e performance digital.
 
-### 2.2 Usuários Alvo
+### 2.3 Arquitetura Funcional e Semântica Visual
+O aplicativo organiza os elementos musicais de forma visual e intuitiva na matriz 8x8 (64 pads), utilizando um código de cores semântico para auxiliar o aluno a identificar a função de cada som na estrutura da obra:
 
- · Estudantes do curso de Produção Musical e Jogos Digitais.
+| Cor | Função Musical | Aplicação Pedagógica / Sonora |
+| :--- | :--- | :--- |
+| **Verde** | Efeitos (SFX) | Transições, impactos, ambiências e elementos pontuais. |
+| **Azul** | Loops | Bases rítmicas contínuas e grooves de acompanhamento. |
+| **Rosa** | Melodia | Frases melódicas, solos, vocais e linhas principais. |
+| **Laranja** | Harmonia | Acordes, progressões harmônicas e pads de sustentação. |
 
- · Professores e monitores em atividades de performance e criação.
+### 2.4 Análise de Concorrentes (Resumo)
+- **Super Pads Lights DJ Launchpad:** Possuía boa customização e biblioteca extensa, mas foi descontinuado e limitava o usuário a no máximo **6 grupos de exclusão (*choke groups*)**, restringindo arranjos mais complexos.
+- **SUPER PADS DJ: Music & Beats:** Interface simplificada e kits comunitários, porém com grade reduzida e baixa flexibilidade de edição para uso pedagógico.
 
-### 2.3 Funcionalidades Principais
+---
 
-| Funcionaliade                | Descrição                                                    |
-| ---------------------------- | ------------------------------------------------             |
-| Controle Musical             | Disparo de clipes, melodias, sequências e controle de mixer. |
-| Performance ao Vivo          | Uso de pads com feedback visual (RGB).                       |
-| Integração MIDI              | Compatibilidade com controladoras físicas (ex.: Launchpad).  |
-| Visualização de Clipes       | Sincronização entre cores e status dos pads.                 |
-| Customização                 | Personalização de escalas, padrões e efeitos visuais.        |
+## 3. Requisitos do Sistema (Escopo Atualizado – PIBITI)
 
-### 2.4 Análise de Alternativas (Concorrentes)
+### 3.1 Requisitos Funcionais
+- **RF01 – Performance e Disparo Polifônico:** Permitir a execução simultânea de samples na grade 8x8 com suporte a múltiplas páginas/bancos de sons na mesma sessão.
+- **RF02 – Grupos de Exclusão Dinâmicos (Choke Groups):** Permitir agrupar pads para que não toquem simultaneamente, aplicando um *fade-out* curto na transição para evitar cliques/estalos, **sem a limitação de 6 grupos** do software de referência.
+- **RF03 – Edição de Pads (Pad Editor):** Permitir ajustar volume individual, *pitch* (afinação), envelopes simples (*fade-in* / *fade-out*), corte básico (*trimming*), além de clonar ou remover pads.
+- **RF04 – Padronização Semântica de Cores:** Atribuir e customizar cores dos pads conforme sua função musical (Verde, Azul, Rosa, Laranja).
+- **RF05 – Importação e Gravação de Áudio:** Permitir importar arquivos locais da biblioteca do dispositivo (1ª opção) e gravar samples diretamente pelo microfone do dispositivo (2ª opção).
+- **RF06 – Gestão de Backing Tracks e Kits:** Permitir selecionar a música de acompanhamento (*playback*) e salvar kits personalizados em JSON (contendo nome do kit, nome da música e nome do autor/usuário).
+- **RF07 – Integração MIDI e Compartilhamento:** Suportar controladoras MIDI externas e possibilitar a exportação/compartilhamento de kits entre usuários.
 
-**Super Pads Lights DJ Launchpad**
+### 3.2 Requisitos Não Funcionais
+- **RNF01 – Baixa Latência:** Resposta imediata ao toque, adequada para execução rítmica em tempo real.
+- **RNF02 – Suporte Multiplataforma:** Compilação nativa para Desktop (Windows) e Mobile (Android) com suporte robusto a *multitouch*.
+- **RNF03 – Ergonomia e Identidade Visual:** Interface responsiva em *Dark Mode* de alto contraste, baseada na paleta institucional da PUCPR (Bordô profundo e Dourado Neon).
+- **RNF04 – Gerenciamento Seguro de Memória:** Alocação e destruição determinística de fontes de áudio em C++, evitando vazamentos de memória e quedas de quadros (*frames*) durante a troca de telas e kits.
 
- · Vantagens: Customização de áudio, cores e biblioteca extensa.
+---
 
- · Limitações: App descontinuado, instabilidade de servidores.
+## 4. Arquitetura Técnica e Design de Interface
 
-**Fluxo de Telas**
+### 4.1 Arquitetura Modular (C++ / JUCE)
+O sistema é estruturado de forma modular sobre o framework **JUCE 8.0.10**:
+- **Gerenciador Principal (`MainComponent`):** Controla o ciclo de vida das telas via `std::unique_ptr`, gerencia o `juce::MixerAudioSource` central e garante a limpeza segura de recursos de áudio na navegação.
+- **Núcleo de Performance (`PadGridComponent` & `PadComponent`):** Renderiza a grade 8x8 responsiva, gerencia a reprodução da *backing track*, executa o feedback visual de *fade-out* a 60 FPS via `juce::Timer` e interpreta os arquivos de configuração JSON.
+- **Mixer e Configurações (`SettingsComponent`):** Interface dedicada ao roteamento de áudio, controle de ganho (Master e Base) e parâmetros técnicos.
+- **Módulos Planejados (Próximas Sprints):** `PadEditorComponent` (edição de *pitch*, volume, *fade* e grupos), `AudioRecorderComponent` (captura via microfone) e `KitSerializer` (salvamento e exportação de kits).
 
-├── 1              ← Tela dos Pads
+### 4.2 Fluxo de Interface e Navegação
+O diagrama de interface ilustra o *storyboard* de navegação em *Dark Mode*, estruturado em três telas principais interconectadas:
 
-│   ├── 1.1               ← Edição dos Pads.
+- **Menu Principal (Esquerda):** Porta de entrada do aplicativo, com acesso rápido aos kits disponíveis, biblioteca, painel de configurações/mixer e informações do projeto.
+- **Grade de Performance (Centro):** Núcleo interativo do instrumento virtual com matriz 8x8, controles de transporte da *backing track* e botão de retorno no cabeçalho, além de barra inferior reservada para navegação entre páginas de pads.
+- **Configurações e Mixagem (Direita):** Painel para ajustes técnicos avançados, faders independentes para controle de ganho, ajustes de parâmetros dos pads e controles de gravação/reprodução.
 
-│   ├── 1.2               ← Skins visuais.
+<img width="1920" height="1080" alt="Settings" src="https://github.com/user-attachments/assets/fb29c16e-c7ae-49fe-a794-8cbd728a7e4d" />
 
-│   ├── 1.3               ← Tutorial (How to Play).
+> Imagem gerada e editada com auxílio de inteligência artificial – Gemini.
 
-├── 2              ← Tela de Kits
+---
 
-│   ├── 2.1               ← Aba Kits (gênero, artista, popularidade, novidades, país).
+## 5. Ambiente de Desenvolvimento e Build
 
-│   ├── 2.2               ← Aba Comunidade (upload/download de kits, busca).
+### 5.1 Ferramentas e Versões
+| Ferramenta | Especificação / Versão |
+| :--- | :--- |
+| **Framework de Áudio** | JUCE 8.0.10 ou superior |
+| **IDE Desktop (Windows)** | Visual Studio 2022 (Carga: *Desenvolvimento para Desktop com C++*, MSVC v143+, Windows 10/11 SDK) |
+| **IDE Mobile (Android)** | Android Studio Jellyfish / Iguana ou superior (SDK Platform 34, NDK Side-by-side 26.x/27.x, CMake) |
 
-│   ├── 2.3               ← Aba Perfil (kits baixados, áudios gravados, importados).
+### 5.2 Configuração Desktop (Windows)
+1. Extraia o JUCE em um diretório raiz (ex.: `C:\JUCE`) e abra o **Projucer**.
+2. Abra o arquivo `PucPads.jucer` e verifique os caminhos em `File > Global Paths`.
+3. Selecione o exportador **Visual Studio 2022** e clique em *Save and Open in IDE*.
 
-│   ├── 2.4               ← Aba Configurações (informações, upgrade de plano, cores).
+### 5.3 Configuração Mobile (Android)
+1. No Android Studio (SDK Manager), instale o **NDK (Side by side)** e o **CMake**.
+2. No Projucer, configure os caminhos do SDK e NDK em `File > Global Paths`.
+3. Salve o projeto para gerar os arquivos Gradle em `Builds/Android`, abra a pasta no Android Studio e execute o build via Depuração USB.
+
+---
+
+## 6. Roadmap e Próximos Passos de Desenvolvimento (PIBITI 2026–2027)
+
+### 6.1 O que já foi concluído (Baseline Atual)
+- [x] Validação comparativa de engines (Unity vs. JUCE) e migração definitiva para C++/JUCE.
+- [x] Motor de mixagem polifônica (`juce::MixerAudioSource`) e player dedicado para *backing tracks*.
+- [x] Parser dinâmico de kits via JSON (`drumkit.json` / `notes.json`) com suporte a cores ARGB.
+- [x] Grade responsiva 8x8 (64 pads) com feedback visual de decaimento suave a 60 FPS (`juce::Timer`).
+- [x] Arquitetura de navegação entre telas (Menu Principal, Grade de Performance e Configurações/Mixer) com gerenciamento determinístico de memória.
+- [x] Compilação e validação de *multitouch* e baixa latência em dispositivo Android real.
+
+### 6.2 Próximos Passos Técnicos (Sprints em Planejamento)
+- **Navegação Multi-páginas e Semântica de Cores:**
+  - Implementar botões na margem inferior da `PadGridComponent` para alternar entre diferentes bancos/páginas de pads na mesma música.
+  - Atualizar os kits padrão para refletir o código de cores pedagógico (Verde: Efeitos, Azul: Loop, Rosa: Melodia, Laranja: Harmonia).
+- **Motor de Grupos de Exclusão (Choke Groups):**
+  - Implementar sistema dinâmico de grupos no gerenciador de pads, permitindo número ilimitado de grupos (superando o limite de 6 grupos do concorrente).
+  - Aplicar *fade-out* rápido (ex.: 15–30 ms) no sample anterior sempre que um novo pad do mesmo grupo for acionado, evitando artefatos de áudio (*clicks*).
+- **Aba de Edição de Pads (Pad Editor):**
+  - Conectar os faders da `SettingsComponent` ao controle real de ganho (Master, Backing Track e volume individual por pad).
+  - Implementar controle de *Pitch* em tempo real (`juce::ResamplingAudioSource`) e envelopes simples de *Fade-in* / *Fade-out*.
+  - Adicionar funções utilitárias de edição: **Clonar Pad**, **Remover Pad** e corte básico de início/fim do sample (*trimming*).
+- **Criação de Conteúdo (Importação e Gravação):**
+  - Implementar seletor de arquivos nativo (`juce::FileChooser`) para importar samples da biblioteca local do dispositivo.
+  - Implementar captura de áudio via microfone (`juce::AudioDeviceManager` + gravação em buffer/WAV) para criação de samples autorais em sala de aula.
+- **Persistência, Salvamento de Kits e Compartilhamento:**
+  - Criar tela de salvamento de kit para serializar em JSON: **Nome do Kit**, **Nome da Música (Playback)**, **Nome do Usuário** e mapeamento completo dos pads.
+  - *(Opcional)* Implementar exportação/importação de pacotes de kits (`.zip`) para compartilhamento entre alunos e professores.
+
+---
+
+## 7. Histórico de Engenharia e Legado (Fase Exploratória)
+
+> Esta seção preserva o registro técnico da etapa inicial do projeto para fins de rastreabilidade acadêmica.
+
+### 7.1 Prototipagem Inicial na Engine Unity (2025)
+Inicialmente, a engine Unity foi avaliada para validar a interface e o disparo básico de áudio (`AudioManager` com instanciação dinâmica de `AudioSource` e `Input System`). Embora funcional no desktop, os testes em Android revelaram gargalos críticos para uso musical:
+- Latência nativa elevada no disparo rítmico.
+- Overhead de CPU e picos de *Garbage Collection* causados pela criação/destruição contínua de `GameObjects` de áudio.
+- Complexidade elevada para rastreamento simultâneo de múltiplos dedos (*multitouch*).
+- **Registro em vídeo:** [Protótipo Unity](https://www.youtube.com/watch?v=NwCAiN9RlMc)
+
+### 7.2 Validação do MVP em JUCE (Outubro/2025 – Maio/2026)
+A migração para o framework C++/JUCE eliminou os gargalos de latência e gerenciamento de memória, permitindo acesso direto ao buffer de áudio do hardware e reconhecimento nativo de *multitouch* no Android.
+- **Registros em vídeo:** [Protótipo Inicial JUCE](https://www.youtube.com/watch?v=lgqJpiOi8es) | [Status MVP Integrado](https://youtube.com/shorts/NXkurH1tSUU)
+
+### 7.3 Diagrama de Referência (Fluxo do Aplicativo Legado)
+Durante a análise de requisitos inicial, o fluxo de navegação do *SuperPads Lights* foi mapeado como referência base para a estruturação das telas do PucPads:
+```
+├── 1 ← Tela dos Pads
+│   ├── 1.1 ← Edição dos Pads
+│   ├── 1.2 ← Skins visuais
+│   └── 1.3 ← Tutorial (How to Play)
+└── 2 ← Tela de Kits
+    ├── 2.1 ← Aba Kits (gênero, artista, popularidade, novidades)
+    ├── 2.2 ← Aba Comunidade (upload/download de kits, busca)
+    ├── 2.3 ← Aba Perfil (kits baixados, áudios gravados, importados)
+    └── 2.4 ← Aba Configurações (informações, cores)
+```
 
 <img width="1920" height="1080" alt="Telas do aplicativo" src="https://github.com/user-attachments/assets/edfe8705-c1ee-49d4-8c08-7c5c0f48df50" />
 
 ---
 
-**SUPER PADS DJ: Music & Beats**
-
- · Vantagens: Interface simplificada, kits comunitários.
-
- · Limitações: Poucos pads, pouca customização, menos interatividade.
-
----
-
-## 3. Requisitos do Sistema
-
-### 3.1 Requisitos Funcionais
-
- · RF01: Permitir tocar músicas interagindo com os pads.
-
- · RF02: Importar arquivos de áudio próprios.
-
- · RF03: Gravar áudio pelo microfone do dispositivo.
-
- · RF04: Editar cores, padrões e áudios dos pads.
-
- · RF05: Disponibilizar biblioteca de kits (oficiais e da comunidade).
-
- · RF06: Conectar e controlar dispositivos MIDI físicos.
-
- · RF07: Acessar perfil do usuário com kits baixados/importados.
-
- · RF08: Oferecer tutorial interativo (How to Play).
-
-### 3.2 Requisitos Não Funcionais
-
- · RNF01: Interface simples, responsiva e intuitiva.
-
- · RNF02: Suporte multiplataforma (desktop e mobile).
-
- · RNF03: Baixa latência na execução de sons.
-
- · RNF04: Compatibilidade com dispositivos MIDI padrão.
-
- · RNF05: Segurança e privacidade na comunidade online.
-
-### 3.3 Ferramentas e Versões Necessárias (Ambiente de Desenvolvimento)
-
-Para garantir a compilação correta do projeto PucPads, é necessário configurar o ambiente com as ferramentas abaixo:
-
-| Ferramentas                  | Versão                                                                                             |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------|
-| Framework de Áudio: JUCE     | Versão 8.0.10 ou superior                                                                          |
-| IDE (Windows)                | Visual Studio 2022 ("Dev para Desktop com C++", MSVC v143 (ou mais recente) e Windows 10/11 SDK.)  |
-| IDE (Mobile): Android Studio | Versão Jellyfish/Iguana (SDK: Android SDK Platform 34 e NDK: Side by side 26.x ou 27.x)            |
-| Visualização de Clipes       | Sincronização entre cores e status dos pads.                 |
-| Customização                 | Personalização de escalas, padrões e efeitos visuais.        |
-
-### 3.4 Passos para Configuração (Desktop/Windows)
-
-1. Faça o download do JUCE e extraia em um diretório de fácil acesso (ex: ```C:\JUCE```).
-
-2. Abra o aplicativo Projucer (localizado na pasta do JUCE).
-
-3. No Projucer, abra o arquivo ```PucPads.jucer``` localizado na raiz do projeto.
-
-4. Vá em ```Global Paths``` (no menu do Projucer) e verifique se os caminhos para o JUCE Modules estão corretos.
-
-5. Clique no ícone do seu Exportador (Visual Studio 2022) e depois no botão "Save and Open in IDE" (ou clique no ícone do VS).
-
-### 3.5 Passos para Configuração (Android)
-
-1. Instale o Android Studio e, pelo SDK Manager, baixe o NDK (Side by side) e o CMake.
-
-2. Abra o arquivo ```PucPads.jucer``` no Projucer.
-
-3. Vá na aba do exportador Android.
-
-4. Configure os caminhos do SDK e NDK nas configurações globais do Projucer (```File > Global Paths```).
-
-5. Salve o projeto no Projucer. Ele gerará os arquivos do Gradle na pasta ```Builds/Android```.
-
-6. Abra a pasta ```Builds/Android``` através do Android Studio, conecte seu dispositivo (com Depuração USB ativada) e execute o build.
-
----
-
-## 4. Arquitetura e Design de Interface
-
-### 4.1 Arquitetura Geral
-
-Aplicação modular baseada no framework JUCE, com:
-
- · Módulo de Áudio (execução de base, importação via JSON, gravação).
-
- · Módulo MIDI (conexão com dispositivos externos).
-
- · Módulo de Interface (pads 8x8, botões de controle, UI Institucional).
-
- · Módulo de Kits (biblioteca dinâmica e JSON parser).
-
-### 4.2 Fluxo de Interface e Navegação
-
-O diagrama de interface ilustra o storyboard de navegação, apresentando uma estética minimalista de alto contraste (Dark Mode). Ele incorpora a paleta de cores institucional da PUCPR, utilizando um fundo bordô profundo combinado com elementos interativos iluminados em dourado neon. O fluxo do usuário é estruturado em três telas principais interconectadas:
-
-**· Menu Principal (Esquerda)**: A porta de entrada do aplicativo, apresentando de forma proeminente o brasão oficial da universidade. A navegação é construída através de uma lista de botões arredondados, proporcionando acesso rápido e intuitivo ao menu central, biblioteca de kits de áudio, painel de configurações e informações sobre o projeto.
-
-**· Grade de Performance (Centro)**: O núcleo interativo do instrumento virtual. Esta tela apresenta uma grade preenchida com pads de disparo de áudio. O sistema de feedback visual é demonstrado por pads que acendem com um contorno dourado brilhante ao serem ativados, destacando-se contra o fundo escuro. A barra superior contém controles de gerenciamento de reprodução, permitindo ao usuário pausar, avançar ou retroceder a faixa de base (backing track) durante uma performance.
-
-**· Configurações e Mixagem (Direita)**: Uma interface dedicada para ajustes técnicos avançados e roteamento de áudio. O painel inclui um mixer multicanal com faders independentes para controle de ganho, acompanhados por medidores visuais de nível. A seção inferior apresenta um visualizador de forma de onda (waveform), complementado por controles deslizantes para o corte preciso de samples (pontos de início e fim) e um conjunto de controles mestres para gravação e reprodução geral.
-
-<img width="1920" height="1080" alt="Settings" src="https://github.com/user-attachments/assets/fb29c16e-c7ae-49fe-a794-8cbd728a7e4d" />
-
----
-
-## 5.1 Plano de Trabalho e Considerações Finais
-
-### 5.1 Plano de Trabalho
-
-1. Conhecer características do app de referência.
-
-2. Desenvolver protótipo funcional com integração MIDI.
-
-3. Preencher relatórios conforme solicitado.
-
-4. Concluir o projeto em parceria com a Escola de Belas Artes e a Escola Politécnica.
-
-### 5.2 Considerações Finais
-
-O projeto PucPads busca oferecer uma solução estável, moderna e adaptada às necessidades pedagógicas da Produção Musical, garantindo continuidade das práticas interrompidas com a descontinuidade do SuperPads Lights.
-
----
-
-## 6. Relatório Técnico e Evolução do Desenvolvimento
-
-Esta seção documenta o histórico de pesquisas estruturais e as decisões de engenharia adotadas ao longo do projeto.
-
-### 6.1 Fase Exploratória (Unity)
-
-Em uma fase inicial, a plataforma Unity foi utilizada para prototipar as funcionalidades centrais do aplicativo. O objetivo era validar a capacidade da engine de atender aos requisitos básicos do projeto.
-
-* **Conquistas:** Implementação de ```AudioManager``` básico, Input System (mouse/touch) e interface visual de pads interativos.
-
-* **Limitações Identificadas**: A latência nativa do sistema de áudio padrão mostrou-se um ponto de atenção crítico para a performance musical no Android. A implementação robusta de multitouch e a gestão de recursos (Garbage Collection via instanciação de GameObjects para áudio) indicaram alto risco de gargalos no mobile.
-
-* **Vídeo Demonstrativo:**
-
-- [Assistir ao Vídeo do Protótipo Unity (YouTube Shorts)](https://www.youtube.com/watch?v=NwCAiN9RlMc)
-
-### 6.2 Transição e Consolidação do MVP (JUCE)
-
-A decisão de transicionar para o JUCE foi fundamentada na necessidade de performance de áudio em tempo real. Enquanto a Unity exigiria contornos técnicos (workarounds) para gerenciar latência e polifonia, o JUCE oferece essas capacidades nativamente, sendo o padrão da indústria para software de áudio.
-
-* **Arquitetura de Áudio Profissional:** Uso de ```juce::MixerAudioSource``` garantindo polifonia e latência mínima em ritmo e percussão.
-
-* **Matriz 8x8 e Backing Tracks:** Reestruturação da grade de performance para o padrão de 64 pads com ocupação dinâmica de tela ```(resized())``` e player dedicado para faixas de base.
-
-* **Configuração Dinâmica (JSON):** Leitura de arquivos JSON externos para configurar automaticamente quantidade de pads, arquivos de áudio associados e cores em hexadecimal (ARGB), permitindo criar kits sem recompilação.
-    * Exemplo de estrutura implementada:
-        ```
-        {
-         "backingTrack": "Musica_Jogo.wav",
-         "pads": [
-           {  "note": "Pad_1",
-              "audioFile": "C.mp3",
-              "color": "ffffd700"
-           },
-           {  "note": "Pad_2",
-              "audioFile": "D.mp3",
-              "color": "ffffc107"
-           }  
-          ]
-        }
-        ```
-
-* **Identidade Visual e Feedback:** Implementação de Dark Mode na paleta institucional (Bordô/Dourado) e classe ```juce::Timer``` para animações táteis suaves de fade-out nos pads (60 FPS).
-
-* **Suporte Mobile Comprovado:** Compilação final e testes bem sucedidos em hardware Android via USB Debugging com multitouch perfeito.
-
-* **Status Final do MVP:**
-
-- [Assistir ao Vídeo do Status Final (YouTube Shorts)](https://youtube.com/shorts/NXkurH1tSUU)
-
-## 7. Referências de Pesquisa (Anexos)
-
-### 7.1 Estrutura de Pesquisa sobre Áudio na Unity para Launchpad
-
-#### _1. Fundamentos do Sistema de Áudio na Unity_
-
-Componentes principais:
-
-AudioSource: responsável por reproduzir sons.
-
-AudioClip: arquivo de áudio importado na Unity.
-
-AudioListener: “microfone virtual” da cena (normalmente na câmera principal).
-
-Tipos de importação de áudio:
-
-Compressão: PCM, Vorbis, ADPCM.
-
-Configurações de streaming vs. memória.
-
-Diferença entre 2D e 3D sound (para Launchpad → majoritariamente 2D).
-
-Pesquisa sugerida:
-
-Documentação Unity sobre AudioSource e AudioClip.
-
-Testar diferentes formatos de áudio e latência (WAV, MP3, OGG).
-
-#### _2. Disparo de Sons (Pads)_
-
-Instanciar sons diferentes em pads distintos.
-
-Técnicas para multiplayback: tocar várias vezes o mesmo som sem cortar o anterior.
-
-Uso de AudioSource.PlayOneShot() (simples e rápido).
-
-Criação de pool de AudioSources para evitar cortes em sons simultâneos.
-
-Controle de volume individual por pad.
-
-Pesquisa sugerida:
-
-Comparar Play() vs. PlayOneShot().
-
-Limites de polifonia no Unity (quantos sons simultâneos sem travar).
-
-#### _3. Feedback Visual Sincronizado_
-
-Eventos visuais ao disparar sons:
-
-Mudança de cor (Image.color em UI, Material.color em 3D).
-
-Efeitos de “pulse” ou “flash” com Animator ou Tweening (ex.: DOTween).
-
-Sincronização básica:
-
-Ativar efeito junto com o PlayOneShot().
-
-Manter cor/efeito por tempo fixo ou pela duração do som (clip.length).
-
-Pesquisa sugerida:
-
-Capturar duração do áudio (AudioClip.length).
-
-Usar corrotinas para animar feedback visual.
-
-#### _4. Música de Fundo_
-
-Carregar e reproduzir faixa completa.
-
-Configuração: AudioSource.loop = true.
-
-Controle separado:
-
-Um AudioSource exclusivo para música base.
-
-Outro para disparo dos pads (PlayOneShot).
-
-Pesquisa sugerida:
-
-Streaming vs. memória para faixas longas.
-
-Controle da posição da música (AudioSource.time).
-
-#### _5. Interação Livre com Pads_
-
-Sem necessidade de quantização ou sincronização no MVP.
-
-Garantir latência mínima no disparo de sons.
-
-Testes de input:
-
-Mouse/Teclado para protótipo inicial.
-
-Multitouch no mobile (Input.touchCount).
-
-Pesquisa sugerida:
-
-Diferença de latência entre PC e mobile.
-
-Input multitouch na Unity.
-
-#### _6. Estrutura de Navegação_
-
-Cenas:
-
-Cena inicial (menu) → escolha de kit/música.
-
-Cena principal → grade de pads interativos.
-
-Estrutura mínima:
-
-SceneManager.LoadScene() para troca de telas.
-
-Armazenar escolhas com PlayerPrefs.
-
-Pesquisa sugerida:
-
-Sistema de UI com Canvas (botões, grids).
-
-Uso de Grid Layout Group para organizar pads.
-
-#### _7. Questões Avançadas (Futuras Versões)_
-
-Redução de latência em Unity (especialmente mobile).
-
-Sincronização com BPM/timeline.
-
-Efeitos em tempo real (reverb, filtros, equalizadores via AudioMixer).
-
-Customização de kits (upload de samples pelo usuário).
-
-### 7.2 Áudio na Unity
-
-Durante a pesquisa, foram identificados materiais práticos relevantes sobre como organizar, disparar e manipular sons no Unity.
-
-#### Vídeo 1 – Introdução ao AudioManager
-
-📎 [Introduction to AUDIO in Unity](https://www.youtube.com/watch?v=6OT43pvUyfY) 
-
-1. Mostra a criação de um AudioManager para centralizar o controle de sons.
-
-2. Evita a necessidade de criar múltiplos objetos de áudio na cena.
-
-3. Focado em boas práticas para organização e controle em jogos.
-
-#### Vídeo 2 – Boas e más práticas + Mixer
-
-📎 [How To Add Sound Effects the RIGHT Way | Unity Tutorial](https://www.youtube.com/watch?v=DU7cgVsU2rM&t=87s)
-
-1. Demonstra maneiras corretas e equivocadas de organizar áudios.
-
-2. Aborda técnica de instanciar objeto temporário para tocar áudio e destruí-lo depois (reduz complexidade).
-
-3. Introduz o uso de AudioMixer para criar sliders independentes:
-
-     · Volume Master.
-
-     · Volume da música.
-
-     · Volume dos efeitos sonoros (SFX).
-
-#### Vídeo 3 – Efeitos e automação de áudio
-
-📎 [Introduction to Immersive Audio in Games](https://www.youtube.com/watch?v=b52rP-1xBnc)
-
-1. Mostra a utilização de efeitos imersivos no áudio.
-
-2. Destaca o uso de automação em efeitos como reverb, low pass filter, etc.
-
-3. Relevante para futuras versões do projeto, focadas em imersão e customização avançada.
-
-#### Documentação Oficial da Unity
-
-📎 [Unity Manual – Sistema de Áudio](https://docs.unity3d.com/6000.2/Documentation/Manual/Audio.html)
-
-1. Explica a arquitetura de áudio no Unity.
-
-2. Detalhes sobre:
-
-     · AudioSource e AudioClip.
-
-     · Importação e compressão de formatos (WAV, MP3, OGG).
-
-     · Diferença entre áudio 2D e 3D.
-
-     · Uso de AudioMixer e efeitos nativos.
-
-_Fonte essencial que será utilizada como base de documentação técnica ao longo do projeto._
-
-#### Artigo – Integração de Música e SFX no Unity
-
-📎 [Integrate Music and Sound Effects in Unity for Games – Moldstud](https://moldstud.com/articles/p-integrate-music-and-sound-effects-in-unity-for-games)
-
-Resumo técnico (foco em recursos da Unity):
-
-1. A Unity oferece um sistema robusto de áudio que pode ser aplicado além de jogos, em softwares musicais e interativos.
-
-2. Principais recursos:
-
-     · AudioSource e AudioClip para disparo e reprodução de sons.
-
-     · AudioListener como ponto de referência de áudio na cena.
-
-     · AudioMixer para mixagem, controle de volumes e aplicação de efeitos.
-
-     · Formatos de áudio suportados: WAV, MP3, OGG, AIFF (com opções de compressão e stream).
-
-3. Configurações importantes:
-
-     · Escolha entre streaming (faixas longas, como música de fundo) ou carregamento em memória (samples curtos para pads).
-
-     · Diferenciação entre áudio 2D (ideal para pads e softwares musicais) e áudio 3D (posicionamento espacial, menos relevante neste caso).
-
-4. Efeitos e processamento:
-
-     · Unity possui suporte nativo a filtros como Reverb, Low Pass, High Pass e Echo.
-
-     · Possibilidade de automação de parâmetros para criar variações dinâmicas.
-
-5. Boas práticas destacadas no artigo:
-
-     · Separar música, efeitos e outros sons em diferentes mixers/canais.
-
-     · Otimizar o uso de memória ao lidar com muitos samples.
-
-     · Manter equilíbrio entre qualidade de áudio e performance (especialmente em mobile).
-
-### 7.3 Input Touch na Unity
-
-#### Vídeo 1 – Introdução rápida ao Input System (Touch)
-
-📎 [Unity Touch Input Tutorial: From Basics to Advanced](https://www.youtube.com/watch?v=KrBWCUbfe4o)
-
-1. Demonstra o funcionamento do Input System para interações por toque.
-
-2. Ensina a configurar o celular para testes diretos em dispositivo mobile rodando pela Unity.
-
-3. Mostra de forma rápida o potencial do sistema de touch sem necessidade de scripts complexos.
-
-#### Vídeo 2 – Configuração básica com Input System
-
-📎 [Mobile input/touch control for your Unity game](https://www.youtube.com/watch?v=NqrJHj9xlqY)
-
-1. Apresenta a configuração inicial do Input System.
-
-2. Foco em exemplos voltados a jogos: botões e joysticks virtuais.
-
-3. Mostra scripts pré-criados pelo Unity Input System que podem ser adaptados para interação com pads.
-
-#### Vídeo 3 – Input Touch detalhado com scripts
-
-📎 [How to use Touch with NEW Input System - Unity Tutorial](https://www.youtube.com/watch?v=ERAN5KBy2Gs)
-
-⭐ 📎 [Versão atualizada do mesmo vídeo](https://www.youtube.com/watch?v=4MOOitENQVg)
-
-1. Explicação aprofundada sobre toques na tela e como capturar posições.
-
-2. Demonstra duas abordagens:
-
-3. Input gerenciado diretamente pelo Input System.
-
-4. Input tratado manualmente via scripts.
-
-5. Ensina a organizar a leitura do input de forma clara e escalável.
-
-6. Exemplo prático: teletransportar um objeto para o ponto clicado na tela.
-
-#### Documentação Oficial – Unity Input (Touch)
-
-📎 [Unity Script Reference – Input](https://docs.unity3d.com/ScriptReference/Input.html)
-
-1. Principais funções para toque:
-
-     · Input.touchCount → número de toques simultâneos detectados.
-
-     · Input.GetTouch(index) → retorna informações de um toque específico.
-
-     · Touch.position → posição (x, y) na tela.
-
-     · Touch.phase → estado do toque: Began, Moved, Stationary, Ended, Canceled.
-
-     · Touch.deltaPosition → diferença de movimento desde o último frame.
-
-     · Touch.fingerId → identifica cada dedo de forma única.
-
-     · Input.multiTouchEnabled → habilita/desabilita múltiplos toques.
-
-2. Aplicação no PucPads:
-
-     · Usar toque único para disparar sons nos pads.
-
-     · Usar multitouch para suportar a performance com múltiplos dedos ao mesmo tempo.
+## 8. Referências Técnicas e Registro de Pesquisa
+
+Esta seção sintetiza as documentações oficiais e materiais de apoio consultados durante a fase exploratória (Unity) e a consolidação do produto (JUCE):
+
+### 8.1 Documentações Oficiais
+- **JUCE Framework:** [JUCE Documentation & Tutorials](https://docs.juce.com/) — Base principal para arquitetura de áudio em tempo real (`AudioAppComponent`, `MixerAudioSource`, `AudioTransportSource`), gerenciamento de buffers, *timers* de interface e exportação multiplataforma (Windows/Android).
+- **Unity Audio System:** [Unity Manual – Sistema de Áudio](https://docs.unity3d.com/6000.2/Documentation/Manual/Audio.html) — Estudo de `AudioSource`, `AudioClip`, *AudioMixer*, polifonia e comparação entre *streaming* e carregamento em memória.
+- **Unity Input (Touch):** [Unity Script Reference – Input](https://docs.unity3d.com/ScriptReference/Input.html) — Estudo de rastreamento de toques simultâneos (`touchCount`, `fingerId`, fases de toque) para validação de *multitouch* mobile.
+
+### 8.2 Materiais de Apoio e Vídeos Técnicos (Fase Exploratória)
+- **Arquitetura de Áudio e Mixagem:**
+  - [Introduction to AUDIO in Unity](https://www.youtube.com/watch?v=6OT43pvUyfY) — Centralização de controle via `AudioManager`.
+  - [How To Add Sound Effects the RIGHT Way | Unity Tutorial](https://www.youtube.com/watch?v=DU7cgVsU2rM&t=87s) — Boas práticas de instanciação temporária e separação de canais no mixer (Master, Música e SFX).
+  - [Introduction to Immersive Audio in Games](https://www.youtube.com/watch?v=b52rP-1xBnc) — Conceitos de automação e processamento de efeitos (Reverb, filtros).
+  - [Integrate Music and Sound Effects in Unity for Games – Moldstud](https://moldstud.com/articles/p-integrate-music-and-sound-effects-in-unity-for-games) — Diretrizes de otimização de memória e formatos de áudio em dispositivos móveis.
+- **Interação Multi-touch Mobile:**
+  - [Unity Touch Input Tutorial: From Basics to Advanced](https://www.youtube.com/watch?v=KrBWCUbfe4o) — Configuração de testes diretos em dispositivos Android e fundamentos do *Input System*.
+  - [Mobile input/touch control for your Unity game](https://www.youtube.com/watch?v=NqrJHj9xlqY) — Adaptação de controles virtuais na tela.
+  - [How to use Touch with NEW Input System - Unity Tutorial](https://www.youtube.com/watch?v=ERAN5KBy2Gs) ([Versão atualizada](https://www.youtube.com/watch?v=4MOOitENQVg)) — Leitura escalável de posições e eventos de toque via script.
