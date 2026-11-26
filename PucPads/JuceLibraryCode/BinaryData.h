@@ -27,10 +27,10 @@ namespace BinaryData
     const int            Musica_Jogo_wavSize = 13850638;
 
     extern const char*   drumkit_json;
-    const int            drumkit_jsonSize = 10949;
+    const int            drumkit_jsonSize = 11409;
 
     extern const char*   notes_json;
-    const int            notes_jsonSize = 10717;
+    const int            notes_jsonSize = 11169;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
     const int namedResourceListSize = 8;

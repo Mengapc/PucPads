@@ -186874,8 +186874,8 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
         case 0x04074377:  numBytes = 45822; return F_mp3;
         case 0x04155af8:  numBytes = 45822; return G_mp3;
         case 0x64b6069d:  numBytes = 13850638; return Musica_Jogo_wav;
-        case 0xfedb0657:  numBytes = 10949; return drumkit_json;
-        case 0xfbc267a6:  numBytes = 10717; return notes_json;
+        case 0xfedb0657:  numBytes = 11409; return drumkit_json;
+        case 0xfbc267a6:  numBytes = 11169; return notes_json;
         default: break;
     }
 
