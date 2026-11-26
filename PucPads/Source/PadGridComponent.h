@@ -9,7 +9,13 @@
     Grade de performance de UM template (um arquivo de kit).
 
     O cromo da tela (voltar, play/stop da base e os 8 botoes de template) pertence
-    ao LaunchPadComponent; aqui ficam apenas as paginas do kit e os pads.
+    ao LaunchPadComponent; aqui ficam apenas os pads da grade.
+
+    Um template = uma grade. Variedade dentro do template vem dos choke groups
+    (RF02), nao de paginas: todos os pads de um kit dividem o mesmo 8x8 e cada
+    pad sinaliza a que grupo pertence (borda + selo numerico). O parser continua
+    lendo kits multi-pagina (schema v2) apenas por retrocompatibilidade: neste
+    caso so a primeira pagina e exibida (ver loadKit()).
 
     kitResource vazio => template ainda sem kit: o componente monta uma grade
     fantasma (sem audio), pronta para receber os pads pelo futuro editor.
@@ -28,42 +34,27 @@ public:
     void playBackingTrack();
     void stopBackingTrack();
 
-    // Interrompe todos os samples em execucao (troca de pagina/template ou saida da tela).
+    // Interrompe todos os samples em execucao (troca de template ou saida da tela).
     void stopAllPads();
 
     bool isEmptyTemplate() const noexcept { return isGhostTemplate; }
 
+    // Quantidade de pads instanciados; usado pelos testes de fumaca.
+    int getNumPads() const noexcept { return pads.size(); }
+
 private:
-    // Uma pagina (banco) de pads. Todos os pads sao criados no load (audio
-    // carregado uma unica vez); a troca de pagina so alterna visibilidade/layout.
-    struct Page
-    {
-        juce::String name;
-        juce::OwnedArray<PadComponent> pads;
-    };
-
+    void loadKit (const juce::String& kitResource);
     void loadBackingTrack (const juce::String& trackName);
-    void buildPages();
+    void buildPads (const KitPage& kitPage);
     void buildEmptyTemplate();
-    void buildPageButtons();
-
-    void showPage (int pageIndex);
-    void updatePageButtons();
-    void layoutPage();
-    void layoutPageButtons (juce::Rectangle<int> area);
+    void layoutPads();
 
     void handlePadTriggered (PadComponent* triggerer);
-
-    // Faixa fina (so existe quando o kit tem mais de uma pagina) usada pelos
-    // seletores de pagina. O rodape de 70 px agora e dos botoes de template.
-    static constexpr int pageStripHeight = 34;
 
     juce::MixerAudioSource& mixerSource;
 
     KitDefinition kit;
-    juce::OwnedArray<Page> pageViews;
-    juce::OwnedArray<juce::TextButton> pageButtons;
-    int currentPage = 0;
+    juce::OwnedArray<PadComponent> pads;
     bool isGhostTemplate = false;
     bool backingLoaded = false;
 

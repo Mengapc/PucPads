@@ -3,7 +3,7 @@
   "kit": {
     "name": "Kit Melodia",
     "author": "PucPads",
-    "description": "Notas diatonicas (Do-Re-Mi-Fa-Sol). Pagina 1: melodia; pagina 2: harmonia com choke group.",
+    "description": "Grade unica 8x8 com quatro familias: melodia (sem grupo), harmonia (choke 1), loops (choke 2) e efeitos (choke 3). Notas diatonicas (Do-Re-Mi-Fa-Sol).",
     "backingTrack": "Musica_Jogo.wav"
   },
   "grid": {
@@ -12,7 +12,7 @@
   },
   "pages": [
     {
-      "name": "Melodia",
+      "name": "Grade",
       "pads": [
         {
           "note": "C",
@@ -111,299 +111,6 @@
           "playMode": "gate"
         },
         {
-          "note": "D",
-          "audioFile": "D.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "E",
-          "audioFile": "E.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "F",
-          "audioFile": "F.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "G",
-          "audioFile": "G.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "C",
-          "audioFile": "C.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "D",
-          "audioFile": "D.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "E",
-          "audioFile": "E.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "F",
-          "audioFile": "F.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "G",
-          "audioFile": "G.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "C",
-          "audioFile": "C.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "D",
-          "audioFile": "D.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "E",
-          "audioFile": "E.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "F",
-          "audioFile": "F.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "G",
-          "audioFile": "G.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "C",
-          "audioFile": "C.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "D",
-          "audioFile": "D.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "E",
-          "audioFile": "E.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "F",
-          "audioFile": "F.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "G",
-          "audioFile": "G.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "C",
-          "audioFile": "C.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "D",
-          "audioFile": "D.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "E",
-          "audioFile": "E.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "F",
-          "audioFile": "F.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "G",
-          "audioFile": "G.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "C",
-          "audioFile": "C.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "D",
-          "audioFile": "D.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "E",
-          "audioFile": "E.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "F",
-          "audioFile": "F.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "G",
-          "audioFile": "G.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "C",
-          "audioFile": "C.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "D",
-          "audioFile": "D.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "E",
-          "audioFile": "E.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "F",
-          "audioFile": "F.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "G",
-          "audioFile": "G.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "C",
-          "audioFile": "C.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "D",
-          "audioFile": "D.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "E",
-          "audioFile": "E.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "F",
-          "audioFile": "F.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "G",
-          "audioFile": "G.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "C",
-          "audioFile": "C.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "D",
-          "audioFile": "D.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "E",
-          "audioFile": "E.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "F",
-          "audioFile": "F.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "G",
-          "audioFile": "G.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "C",
-          "audioFile": "C.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "D",
-          "audioFile": "D.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "E",
-          "audioFile": "E.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        },
-        {
-          "note": "F",
-          "audioFile": "F.mp3",
-          "function": "melodia",
-          "playMode": "gate"
-        }
-      ]
-    },
-    {
-      "name": "Harmonia",
-      "pads": [
-        {
           "note": "C",
           "audioFile": "C.mp3",
           "function": "harmonia",
@@ -516,340 +223,228 @@
           "chokeGroup": 1
         },
         {
-          "note": "D",
-          "audioFile": "D.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "E",
-          "audioFile": "E.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "F",
-          "audioFile": "F.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "G",
-          "audioFile": "G.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "C",
+          "note": "Lp1",
           "audioFile": "C.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "D",
+          "note": "Lp2",
           "audioFile": "D.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "E",
+          "note": "Lp3",
           "audioFile": "E.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "F",
+          "note": "Lp4",
           "audioFile": "F.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "G",
+          "note": "Lp5",
           "audioFile": "G.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "C",
+          "note": "Lp1",
           "audioFile": "C.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "D",
+          "note": "Lp2",
           "audioFile": "D.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "E",
+          "note": "Lp3",
           "audioFile": "E.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "F",
+          "note": "Lp4",
           "audioFile": "F.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "G",
+          "note": "Lp5",
           "audioFile": "G.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "C",
+          "note": "Lp1",
           "audioFile": "C.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "D",
+          "note": "Lp2",
           "audioFile": "D.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "E",
+          "note": "Lp3",
           "audioFile": "E.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "F",
+          "note": "Lp4",
           "audioFile": "F.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "G",
+          "note": "Lp5",
           "audioFile": "G.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "C",
+          "note": "Lp1",
           "audioFile": "C.mp3",
-          "function": "harmonia",
+          "function": "loop",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 2
         },
         {
-          "note": "D",
+          "note": "Fx1",
+          "audioFile": "C.mp3",
+          "function": "efeito",
+          "playMode": "oneshot",
+          "chokeGroup": 3
+        },
+        {
+          "note": "Fx2",
           "audioFile": "D.mp3",
-          "function": "harmonia",
+          "function": "efeito",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 3
         },
         {
-          "note": "E",
+          "note": "Fx3",
           "audioFile": "E.mp3",
-          "function": "harmonia",
+          "function": "efeito",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 3
         },
         {
-          "note": "F",
+          "note": "Fx4",
           "audioFile": "F.mp3",
-          "function": "harmonia",
+          "function": "efeito",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 3
         },
         {
-          "note": "G",
+          "note": "Fx5",
           "audioFile": "G.mp3",
-          "function": "harmonia",
+          "function": "efeito",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 3
         },
         {
-          "note": "C",
+          "note": "Fx1",
           "audioFile": "C.mp3",
-          "function": "harmonia",
+          "function": "efeito",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 3
         },
         {
-          "note": "D",
+          "note": "Fx2",
           "audioFile": "D.mp3",
-          "function": "harmonia",
+          "function": "efeito",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 3
         },
         {
-          "note": "E",
+          "note": "Fx3",
           "audioFile": "E.mp3",
-          "function": "harmonia",
+          "function": "efeito",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 3
         },
         {
-          "note": "F",
+          "note": "Fx4",
           "audioFile": "F.mp3",
-          "function": "harmonia",
+          "function": "efeito",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 3
         },
         {
-          "note": "G",
+          "note": "Fx5",
           "audioFile": "G.mp3",
-          "function": "harmonia",
+          "function": "efeito",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 3
         },
         {
-          "note": "C",
+          "note": "Fx1",
           "audioFile": "C.mp3",
-          "function": "harmonia",
+          "function": "efeito",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 3
         },
         {
-          "note": "D",
+          "note": "Fx2",
           "audioFile": "D.mp3",
-          "function": "harmonia",
+          "function": "efeito",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 3
         },
         {
-          "note": "E",
+          "note": "Fx3",
           "audioFile": "E.mp3",
-          "function": "harmonia",
+          "function": "efeito",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 3
         },
         {
-          "note": "F",
+          "note": "Fx4",
           "audioFile": "F.mp3",
-          "function": "harmonia",
+          "function": "efeito",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 3
         },
         {
-          "note": "G",
+          "note": "Fx5",
           "audioFile": "G.mp3",
-          "function": "harmonia",
+          "function": "efeito",
           "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 3
         },
         {
-          "note": "C",
+          "note": "Fx1",
           "audioFile": "C.mp3",
-          "function": "harmonia",
+          "function": "efeito",
           "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "D",
-          "audioFile": "D.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "E",
-          "audioFile": "E.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "F",
-          "audioFile": "F.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "G",
-          "audioFile": "G.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "C",
-          "audioFile": "C.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "D",
-          "audioFile": "D.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "E",
-          "audioFile": "E.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "F",
-          "audioFile": "F.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "G",
-          "audioFile": "G.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "C",
-          "audioFile": "C.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "D",
-          "audioFile": "D.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "E",
-          "audioFile": "E.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
-        },
-        {
-          "note": "F",
-          "audioFile": "F.mp3",
-          "function": "harmonia",
-          "playMode": "oneshot",
-          "chokeGroup": 1
+          "chokeGroup": 3
         }
       ]
     }

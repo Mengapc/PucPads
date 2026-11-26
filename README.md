@@ -53,7 +53,7 @@ O aplicativo organiza os elementos musicais de forma visual e intuitiva na matri
 ## 3. Requisitos do Sistema (Escopo Atualizado – PIBITI)
 
 ### 3.1 Requisitos Funcionais
-- **RF01 – Performance e Disparo Polifônico:** Permitir a execução simultânea de samples na grade 8x8 com suporte a múltiplas páginas/bancos de sons na mesma sessão.
+- **RF01 – Performance e Disparo Polifônico:** Permitir a execução simultânea de samples na grade 8x8, com 8 templates (kits) acessíveis pela barra inferior e choke groups por pad dentro de cada template.
 - **RF02 – Grupos de Exclusão Dinâmicos (Choke Groups):** Permitir agrupar pads para que não toquem simultaneamente, aplicando um *fade-out* curto na transição para evitar cliques/estalos, **sem a limitação de 6 grupos** do software de referência.
 - **RF03 – Edição de Pads (Pad Editor):** Permitir ajustar volume individual, *pitch* (afinação), envelopes simples (*fade-in* / *fade-out*), corte básico (*trimming*), além de clonar ou remover pads.
 - **RF04 – Padronização Semântica de Cores:** Atribuir e customizar cores dos pads conforme sua função musical (Verde, Azul, Rosa, Laranja).
@@ -222,7 +222,7 @@ rm -f local.properties
 - [x] Grade responsiva 8x8 (64 pads) com feedback visual de decaimento suave a 60 FPS (`juce::Timer`).
 - [x] Arquitetura de navegação entre telas (Menu Principal, Grade de Performance e Configurações/Mixer) com gerenciamento determinístico de memória.
 - [x] Compilação e validação de *multitouch* e baixa latência em dispositivo Android real.
-- [x] Tela única de *Launch Pad* com **8 templates** no rodapé (kits como templates) e navegação de páginas por kit.
+- [x] Tela única de *Launch Pad* com **8 templates** no rodapé (kits como templates) e **choke groups com feedback visual** (anel + selo do grupo) no lugar da navegação por páginas.
 - [x] Grupos de exclusão (*choke groups*) ilimitados com *fade-out* curto, lidos do JSON.
 
 ### 6.2 Próximos Passos Técnicos (Sprints em Planejamento)

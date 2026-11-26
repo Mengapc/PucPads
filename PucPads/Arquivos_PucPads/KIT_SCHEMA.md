@@ -1,11 +1,12 @@
 # Formato de arquivo de kit — PucPads (schema v2)
 
-Documento de referência do **schema JSON dos kits** usado pelo PucPads e do **sistema de
-navegação multi-páginas** que ele habilita.
+Documento de referência do **schema JSON dos kits** usado pelo PucPads. O arquivo ainda aceita
+`pages[]` por compatibilidade, mas a UI atual é **um template = uma grade**: a variedade interna
+vem dos **choke groups** (§9), não de páginas (§10).
 
 - **Versão do schema:** `2`
 - **Leitor:** `PucPads/Source/KitDefinition.h` / `KitDefinition.cpp`
-- **Consumidores:** `PadGridComponent` (layout, páginas, choke groups), `PadComponent` (áudio, cor, modo de disparo)
+- **Consumidores:** `PadGridComponent` (layout da grade, choke groups), `PadComponent` (áudio, cor, modo de disparo)
 - **Arquivos em uso:** `Arquivos_PucPads/notes.json` (Kit Melodia) e `Arquivos_PucPads/drumkit.json` (Kit Bateria)
 
 > O parser é **retrocompatível**: arquivos no formato antigo (v1) continuam carregando sem
@@ -75,14 +76,15 @@ Exemplo mínimo (1 página, 2 pads):
 | `columns` | int > 0 | `8` | Colunas usadas no layout. |
 | `rows` | int > 0 | `8` | Linhas usadas no layout. |
 
-A capacidade de cada página é `columns × rows`. Pads além da capacidade **não são exibidos**
-(o validador acusa isso como erro). Com `8 × 8`, cada página comporta 64 pads.
+A capacidade da grade é `columns × rows`. Pads além da capacidade **não são exibidos**
+(o validador acusa isso como erro e `PadGridComponent::buildPads()` descarta os excedentes com
+aviso no log). Com `8 × 8`, a grade comporta 64 pads.
 
 ## 5. Objeto de página
 
 | Campo | Tipo | Obrigatório | Descrição |
 |---|---|---|---|
-| `name` | string | sim (v2) | Rótulo do botão de navegação (ex.: `"Melodia"`). Deve ser único no arquivo. |
+| `name` | string | sim (v2) | Rótulo da página no arquivo (ex.: `"Grade"`). Deve ser único no arquivo. A UI atual exibe apenas a primeira página. |
 | `pads` | array | sim | Array de objetos de pad (§6), na ordem de leitura (linha a linha, 8 por linha). |
 
 Páginas sem nenhum pad válido são **descartadas** pelo parser (com aviso no log).
@@ -139,23 +141,25 @@ semânticas acima são a camada **pedagógica** e não substituem o cromo.
 ## 9. `chokeGroup` (exclusão mútua)
 
 Pads com o **mesmo número de grupo** (`> 0`) se interrompem mutuamente: ao acionar um pad, todos
-os outros do mesmo grupo — **inclusive de outras páginas do mesmo kit** — são interrompidos com
-*fade-out* de 25 ms (evita estalo de corte seco).
+os outros do mesmo grupo **da mesma grade/template** são interrompidos com *fade-out* de 25 ms
+(evita estalo de corte seco).
 
 - `0` ou ausente = sem grupo (o pad nunca é interrompido por outro);
 - O grupo é escopado **por kit** (kits diferentes não se interferem);
 - Sugestão de convenção: `1..9` para "famílias" (ex.: `1` acordes, `2` loops, `3` efeitos longos).
 
-## 10. Navegação multi-páginas (UI)
+## 10. Páginas no arquivo × grade na tela
 
-- O rodapé de 70 px — reservado desde a primeira versão e até então sem uso — agora hospeda os
-  **botões de página**, um por página, rotulados com o `name` da página.
-- A aba ativa aparece **invertida**: fundo dourado `ffffd700` com texto bordô `ff420012`.
-- Kits com **uma única página** não exibem botões — a tela fica idêntica ao comportamento antigo.
-- Trocar de página esconde os pads da anterior, mostra os da nova, reaplica o layout e
-  **interrompe** qualquer sample ainda tocando da página que saiu.
-- Os pads de todas as páginas são **criados uma única vez** no carregamento (o áudio não é
-  recarregado ao navegar); a troca só alterna visibilidade e posição.
+- A tela do template **não tem mais seletor de páginas**: `PadGridComponent` monta uma única grade
+  com a primeira página do kit e distribui os pads em `columns × rows`.
+- Kits com mais de uma página continuam **válidos** (parser v2 intacto), mas só a primeira é
+  exibida — `loadKit()` registra o aviso em `DBG`. Kits novos devem ter **uma** página.
+- A variedade dentro do template vem do `chokeGroup` (§9), sinalizado no pad por um **anel** com a
+  cor do grupo e um **selo circular** com o número (canto superior direito); pads sem grupo mantêm
+  a borda dourada institucional.
+- O selo é omitido em pads menores que 34 × 22 px; a borda colorida permanece.
+- As cores dos grupos vivem em `UiTheme::chokeGroupColour()` (6 cores cíclicas, independentes da
+  paleta funcional do §7) e o número do selo é a referência exata quando a paleta cicla.
 
 ---
 
@@ -219,8 +223,8 @@ compatibilidade com um kit v1 sintético.
 
 ## 15. Limites práticos (débito conhecido)
 
-Todos os pads de todas as páginas são instanciados no carregamento e registrados no
-`MixerAudioSource`. Com samples placeholder (≈45 KB) isso é irrelevante; com kits reais e muitas
-páginas, a soma de fontes de áudio pode pesar. A evolução planejada é um **pool de vozes** com
-carregamento por página — a estrutura de `KitPage`/`KitPad` já separa o que é dado do que é
-componente de UI para permitir essa troca sem tocar no formato do arquivo.
+Todos os pads da grade (até `columns × rows`, 64 no 8 × 8) são instanciados no carregamento e
+registrados no `MixerAudioSource`. Com samples placeholder (≈45 KB) isso é irrelevante; com kits
+reais a soma de fontes de áudio pode pesar. A evolução planejada é um **pool de vozes** — a
+estrutura de `KitPad` já separa o dado do componente de UI e permite essa troca sem tocar no
+formato do arquivo.

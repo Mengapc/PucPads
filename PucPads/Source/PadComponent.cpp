@@ -51,8 +51,11 @@ void PadComponent::paint (juce::Graphics& g)
         return;
     }
 
+    const bool emGrupo = (chokeGroup > 0);
+    const juce::Colour corDoGrupo = UiTheme::chokeGroupColour(chokeGroup);
+
     juce::Colour corFundoInativo = UiTheme::bordo();
-    juce::Colour corBordaInativa = UiTheme::bordaDourada();
+    juce::Colour corBordaInativa = emGrupo ? corDoGrupo : UiTheme::bordaDourada();
 
     // A MAGICA DA COR: Mistura o fundo inativo com a cor Neon baseada no "currentFade"
     juce::Colour corAtual = corFundoInativo.interpolatedWith(activeColour, currentFade);
@@ -60,12 +63,14 @@ void PadComponent::paint (juce::Graphics& g)
     g.fillAll(corAtual);
 
     // Se o brilho estiver alto (> 0.8), a borda fica branca (estouro de luz)
-    // Se estiver diminuindo, a borda volta a ser dourada
+    // Se estiver diminuindo, a borda volta a ser dourada -- ou a cor do choke group
+    const float espessuraBorda = emGrupo ? 2.0f : 1.5f;
+    const int recuoBorda = emGrupo ? 2 : 1;
+
     g.setColour(currentFade > 0.8f ? juce::Colours::white : corBordaInativa);
+    g.drawRoundedRectangle(getLocalBounds().reduced(recuoBorda).toFloat(), 4.0f, espessuraBorda);
 
-    g.drawRoundedRectangle(getLocalBounds().reduced(1).toFloat(), 4.0f, 1.5f);
-
-    // Rotulo do pad (ex.: "C", "D"), util na pagina de melodia. Fica oculto em pads minusculos.
+    // Rotulo do pad (ex.: "C", "D"), util na grade de melodia. Fica oculto em pads minusculos.
     if (noteName.isNotEmpty() && getWidth() > 34 && getHeight() > 22)
     {
         g.setColour(juce::Colours::white.withAlpha(0.85f));
@@ -73,6 +78,29 @@ void PadComponent::paint (juce::Graphics& g)
         g.drawText(noteName, getLocalBounds().reduced(4, 2),
                    juce::Justification::centredBottom, false);
     }
+
+    if (emGrupo)
+        paintChokeBadge(g, corDoGrupo);
+}
+
+//==============================================================================
+void PadComponent::paintChokeBadge(juce::Graphics& g, juce::Colour groupColour) const
+{
+    // Pads minusculos perderiam a legibilidade do numero: nesse caso a borda
+    // colorida ja identifica o grupo.
+    if (getWidth() < 34 || getHeight() < 22)
+        return;
+
+    const int lado = juce::jlimit(12, 18, juce::jmin(getWidth(), getHeight()) / 3);
+    const juce::Rectangle<int> selo(getWidth() - lado - 3, 3, lado, lado);
+
+    g.setColour(groupColour);
+    g.fillEllipse(selo.toFloat());
+
+    // Texto em bordo: contraste garantido contra toda a paleta de grupos (tons claros).
+    g.setColour(UiTheme::bordo());
+    g.setFont(juce::Font(juce::FontOptions(juce::jmax(9.0f, (float) lado * 0.62f))).boldened());
+    g.drawText(juce::String(chokeGroup), selo, juce::Justification::centred, false);
 }
 
 void PadComponent::resized()

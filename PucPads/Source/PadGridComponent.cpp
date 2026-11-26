@@ -14,13 +14,21 @@ PadGridComponent::PadGridComponent (juce::MixerAudioSource& mixerToUse, const ju
     //    LaunchPadComponent desabilita play/stop nesse caso)
     if (kitResource.isEmpty())
     {
-        DBG("Template vazio: montando grade fantasma "
-            + juce::String(kit.columns) + "x" + juce::String(kit.rows));
-
         buildEmptyTemplate();
         return;
     }
 
+    loadKit (kitResource);
+}
+
+PadGridComponent::~PadGridComponent()
+{
+    mixerSource.removeInputSource (&backgroundSource);
+}
+
+//==============================================================================
+void PadGridComponent::loadKit (const juce::String& kitResource)
+{
     DBG("--------------------------------------------------");
     DBG("Carregando o kit: " + kitResource);
 
@@ -45,24 +53,25 @@ PadGridComponent::PadGridComponent (juce::MixerAudioSource& mixerToUse, const ju
         return;
     }
 
-    DBG("Kit '" + kit.name + "' | paginas: " + juce::String(kit.pages.size())
-        + " | pads: " + juce::String(kit.getNumPads()));
+    // 5. Um template = uma grade. Kits antigos com varias paginas continuam
+    //    validos no dado, mas a tela (sem seletor de paginas) exibe a primeira.
+    if (kit.pages.size() > 1)
+        DBG("AVISO: o kit '" + kit.name + "' tem " + juce::String (kit.pages.size())
+            + " paginas; a tela usa o conceito de choke group, entao apenas a primeira ('"
+            + kit.pages.getReference (0).name + "') sera exibida.");
 
-    // 5. Base musical + pads de todas as paginas
+    DBG("Kit '" + kit.name + "' | grade: " + juce::String (kit.columns) + "x" + juce::String (kit.rows)
+        + " | paginas no JSON: " + juce::String (kit.pages.size()));
+
+    // 6. Base musical + pads da grade
     if (kit.backingTrack.isNotEmpty())
         loadBackingTrack (kit.backingTrack);
 
-    buildPages();
-    buildPageButtons();
-    showPage (0);
+    buildPads (kit.pages.getReference (0));
+    layoutPads();
 
-    DBG("Processo de criacao finalizado. Pads criados: " + juce::String(kit.getNumPads()));
+    DBG("Processo de criacao finalizado. Pads criados: " + juce::String (pads.size()));
     DBG("--------------------------------------------------");
-}
-
-PadGridComponent::~PadGridComponent()
-{
-    mixerSource.removeInputSource (&backgroundSource);
 }
 
 //==============================================================================
@@ -112,33 +121,38 @@ void PadGridComponent::stopBackingTrack()
 }
 
 //==============================================================================
-void PadGridComponent::buildPages()
+void PadGridComponent::buildPads (const KitPage& kitPage)
 {
-    for (auto& kitPage : kit.pages)
+    // Grade cheia e o limite fisico do kit: pads excedentes (JSON maior que a
+    // grade) nao teriam lugar no layout e sao descartados aqui, com aviso.
+    const int capacity = juce::jmax (0, kit.columns * kit.rows);
+
+    for (auto& padSpec : kitPage.pads)
     {
-        auto* page = pageViews.add (new Page());
-        page->name = kitPage.name;
-
-        for (auto& padSpec : kitPage.pads)
+        if (pads.size() >= capacity)
         {
-            const juce::String resourceName = padSpec.audioFile.replaceCharacter ('.', '_');
-
-            int dataSize = 0;
-            const char* audioData = BinaryData::getNamedResource (resourceName.toUTF8(), dataSize);
-
-            if (audioData == nullptr || dataSize <= 0)
-            {
-                DBG("... FALHA! Recurso " + resourceName + " nao encontrado (pad ignorado).");
-                continue;
-            }
-
-            auto* newPad = page->pads.add (new PadComponent (padSpec, audioData, dataSize, mixerSource));
-
-            // O grid resolve os choke groups porque precisa enxergar todos os pads
-            newPad->onTriggered = [this] (PadComponent* triggered) { handlePadTriggered (triggered); };
-
-            addChildComponent (newPad); // fica oculto ate a pagina ser exibida
+            DBG("AVISO: o kit tem mais pads do que a grade " + juce::String (kit.columns) + "x"
+                + juce::String (kit.rows) + " comporta; os excedentes foram ignorados.");
+            break;
         }
+
+        const juce::String resourceName = padSpec.audioFile.replaceCharacter ('.', '_');
+
+        int dataSize = 0;
+        const char* audioData = BinaryData::getNamedResource (resourceName.toUTF8(), dataSize);
+
+        if (audioData == nullptr || dataSize <= 0)
+        {
+            DBG("... FALHA! Recurso " + resourceName + " nao encontrado (pad ignorado).");
+            continue;
+        }
+
+        auto* newPad = pads.add (new PadComponent (padSpec, audioData, dataSize, mixerSource));
+
+        // O grid resolve os choke groups porque precisa enxergar todos os pads
+        newPad->onTriggered = [this] (PadComponent* triggered) { handlePadTriggered (triggered); };
+
+        addAndMakeVisible (newPad);
     }
 }
 
@@ -147,82 +161,23 @@ void PadGridComponent::buildEmptyTemplate()
 {
     isGhostTemplate = true;
 
-    auto* page = pageViews.add (new Page());
-    page->name = "Vazio";
-
-    const int numPads = kit.columns * kit.rows;
+    const int numPads = juce::jmax (0, kit.columns * kit.rows);
 
     for (int i = 0; i < numPads; ++i)
     {
         // KitPad sem audioFile + bytes nulos => pad fantasma (nao toca, nao entra no mixer)
         KitPad ghostSpec;
-        auto* ghostPad = page->pads.add (new PadComponent (ghostSpec, nullptr, 0, mixerSource));
-
-        addChildComponent (ghostPad);
+        addAndMakeVisible (pads.add (new PadComponent (ghostSpec, nullptr, 0, mixerSource)));
     }
 
-    showPage (0);
-}
-
-//==============================================================================
-void PadGridComponent::buildPageButtons()
-{
-    // Com uma pagina unica nao ha navegacao: a faixa de paginas nem aparece
-    if (pageViews.size() <= 1)
-        return;
-
-    for (int i = 0; i < pageViews.size(); ++i)
-    {
-        auto* page = pageViews.getUnchecked (i);
-        const juce::String label = page->name.isNotEmpty() ? page->name : juce::String (i + 1);
-
-        auto* button = pageButtons.add (new juce::TextButton (label));
-        button->onClick = [this, i] { showPage (i); };
-
-        UiTheme::applyButtonStyle (*button);
-        addAndMakeVisible (button);
-    }
-}
-
-//==============================================================================
-void PadGridComponent::showPage (int pageIndex)
-{
-    if (pageViews.isEmpty())
-        return;
-
-    currentPage = juce::jlimit (0, pageViews.size() - 1, pageIndex);
-
-    for (int i = 0; i < pageViews.size(); ++i)
-    {
-        const bool isActive = (i == currentPage);
-
-        for (auto* pad : pageViews.getUnchecked (i)->pads)
-        {
-            pad->setVisible (isActive);
-
-            // Sample em execucao de uma pagina que saiu de cena nao deve continuar tocando
-            if (! isActive)
-                pad->chokeStop();
-        }
-    }
-
-    updatePageButtons();
-    layoutPage();
-    repaint();
-}
-
-void PadGridComponent::updatePageButtons()
-{
-    for (int i = 0; i < pageButtons.size(); ++i)
-        UiTheme::applyButtonStyle (*pageButtons.getUnchecked (i), i == currentPage);
+    layoutPads();
 }
 
 //==============================================================================
 void PadGridComponent::stopAllPads()
 {
-    for (auto* page : pageViews)
-        for (auto* pad : page->pads)
-            pad->chokeStop();
+    for (auto* pad : pads)
+        pad->chokeStop();
 }
 
 //==============================================================================
@@ -233,14 +188,11 @@ void PadGridComponent::handlePadTriggered (PadComponent* triggerer)
     if (group <= 0)
         return;
 
-    // Choke group vale para o kit inteiro: um pad de outra pagina tambem e interrompido
-    for (auto* page : pageViews)
+    // Choke group vale para toda a grade do template: pads do mesmo grupo se cortam
+    for (auto* pad : pads)
     {
-        for (auto* pad : page->pads)
-        {
-            if (pad != triggerer && pad->getChokeGroup() == group)
-                pad->chokeStop();
-        }
+        if (pad != triggerer && pad->getChokeGroup() == group)
+            pad->chokeStop();
     }
 }
 
@@ -253,63 +205,29 @@ void PadGridComponent::paint (juce::Graphics& g)
 //==============================================================================
 void PadGridComponent::resized()
 {
-    auto bounds = getLocalBounds();
-
-    // Faixa de paginas: so quando o kit realmente tem navegacao
-    if (! pageButtons.isEmpty())
-        layoutPageButtons (bounds.removeFromTop (pageStripHeight).reduced (8, 4));
-
-    layoutPage();
+    layoutPads();
 }
 
 //==============================================================================
-void PadGridComponent::layoutPageButtons (juce::Rectangle<int> area)
+void PadGridComponent::layoutPads()
 {
-    const int count = pageButtons.size();
-
-    if (count == 0)
+    if (pads.isEmpty())
         return;
 
-    const int gap = 6;
-    const int buttonWidth = juce::jmax (40, (area.getWidth() - gap * (count - 1)) / count);
+    const auto bounds = getLocalBounds();
 
-    for (int i = 0; i < count; ++i)
-    {
-        pageButtons.getUnchecked (i)->setBounds (area.removeFromLeft (buttonWidth));
-
-        if (i < count - 1)
-            area.removeFromLeft (gap);
-    }
-}
-
-//==============================================================================
-void PadGridComponent::layoutPage()
-{
-    if (pageViews.isEmpty())
-        return;
-
-    auto bounds = getLocalBounds();
-
-    if (! pageButtons.isEmpty())
-        bounds.removeFromTop (pageStripHeight);
-
-    const int numCols = kit.columns;
-    const int numRows = kit.rows;
+    const int numCols = juce::jmax (1, kit.columns);
+    const int numRows = juce::jmax (1, kit.rows);
     const int margin = 4;
 
     const int availableWidth  = bounds.getWidth()  - margin * (numCols + 1);
     const int availableHeight = bounds.getHeight() - margin * (numRows + 1);
-
-    if (availableWidth <= 0 || availableHeight <= 0)
-        return;
 
     const int padWidth  = availableWidth  / numCols;
     const int padHeight = availableHeight / numRows;
 
     const int startX = bounds.getX() + margin;
     const int startY = bounds.getY() + margin;
-
-    auto& pads = pageViews.getUnchecked (currentPage)->pads;
 
     for (int i = 0; i < pads.size(); ++i)
     {

@@ -56,32 +56,42 @@ namespace
         check (kit.name == "Kit Melodia", "kit.name = Kit Melodia");
         check (kit.backingTrack == "Musica_Jogo.wav", "backingTrack preservado");
         check (kit.columns == 8 && kit.rows == 8, "grade 8x8");
-        check (kit.pages.size() == 2, "2 paginas");
-        check (kit.getNumPads() == 128, "128 pads no total (64 por pagina)");
+        check (kit.pages.size() == 1, "1 pagina: o template e uma grade unica");
+        check (kit.getNumPads() == 64, "64 pads na grade");
 
-        if (kit.pages.size() != 2)
+        if (kit.pages.size() != 1)
             return;
 
-        const auto& melodia = kit.pages.getReference (0);
-        const auto& harmonia = kit.pages.getReference (1);
+        const auto& grade = kit.pages.getReference (0);
+        check (grade.pads.size() == 64, "64 pads na pagina unica");
 
-        check (melodia.name == "Melodia", "pagina 1 = Melodia");
-        check (harmonia.name == "Harmonia", "pagina 2 = Harmonia");
-        check (melodia.pads.size() == 64, "pagina 1 com 64 pads");
-        check (harmonia.pads.size() == 64, "pagina 2 com 64 pads");
-
-        const auto& gatePad = melodia.pads.getReference (0);
-        check (argb (gatePad.colour) == argb (KitDefinition::colourForFunction ("melodia")),
+        // Linhas 1-2: melodia (gate, sem choke group)
+        const auto& melodiaPad = grade.pads.getReference (0);
+        check (melodiaPad.note == "C" && melodiaPad.audioFile == "C.mp3", "pad 0 = C/C.mp3");
+        check (argb (melodiaPad.colour) == argb (KitDefinition::colourForFunction ("melodia")),
                "cor do pad de melodia vem da paleta (rosa)");
-        check (! gatePad.oneShot, "melodia usa gate (padrao)");
-        check (gatePad.chokeGroup == 0, "melodia sem choke group");
-        check (gatePad.note == "C" && gatePad.audioFile == "C.mp3", "pad 0 = C/C.mp3");
+        check (! melodiaPad.oneShot, "melodia usa gate (padrao)");
+        check (melodiaPad.chokeGroup == 0, "melodia sem choke group");
 
-        const auto& chokedPad = harmonia.pads.getReference (5);
-        check (argb (chokedPad.colour) == argb (KitDefinition::colourForFunction ("harmonia")),
+        // Linhas 3-4: harmonia no grupo 1
+        const auto& harmoniaPad = grade.pads.getReference (16);
+        check (argb (harmoniaPad.colour) == argb (KitDefinition::colourForFunction ("harmonia")),
                "cor do pad de harmonia vem da paleta (laranja)");
-        check (chokedPad.oneShot, "harmonia usa oneshot");
-        check (chokedPad.chokeGroup == 1, "harmonia no choke group 1");
+        check (harmoniaPad.oneShot, "harmonia usa oneshot");
+        check (harmoniaPad.chokeGroup == 1, "harmonia no choke group 1");
+
+        // Linhas 5-6 e 7-8: loops e efeitos, com grupos proprios na MESMA grade
+        check (grade.pads.getReference (32).chokeGroup == 2, "loops no choke group 2");
+        check (grade.pads.getReference (48).chokeGroup == 3, "efeitos no choke group 3");
+
+        int porGrupo[4] = { 0, 0, 0, 0 };
+
+        for (const auto& pad : grade.pads)
+            if (pad.chokeGroup >= 0 && pad.chokeGroup < 4)
+                ++porGrupo[pad.chokeGroup];
+
+        check (porGrupo[0] == 16 && porGrupo[1] == 16 && porGrupo[2] == 16 && porGrupo[3] == 16,
+               "4 familias de 16 pads (sem grupo + choke groups 1, 2 e 3)");
     }
 
     //------------------------------------------------------------------
@@ -93,17 +103,16 @@ namespace
 
         check (kit.isValid(), "kit valido");
         check (kit.name == "Kit Bateria", "kit.name = Kit Bateria");
-        check (kit.pages.size() == 2, "2 paginas");
+        check (kit.pages.size() == 1, "1 pagina: loops e efeitos na mesma grade");
 
-        if (kit.pages.size() != 2)
+        if (kit.pages.size() != 1)
             return;
 
-        check (kit.pages.getReference (0).name == "Loops", "pagina 1 = Loops");
-        check (kit.pages.getReference (1).name == "Efeitos", "pagina 2 = Efeitos");
-        check (kit.pages.getReference (0).pads.getReference (0).chokeGroup == 2,
-               "loops no choke group 2");
-        check (kit.pages.getReference (1).pads.getReference (0).chokeGroup == 0,
-               "efeitos sem choke group");
+        const auto& grade = kit.pages.getReference (0);
+        check (grade.pads.size() == 64, "64 pads na grade");
+        check (grade.pads.getReference (0).chokeGroup == 1, "loops no choke group 1");
+        check (grade.pads.getReference (32).chokeGroup == 2, "efeitos com choke no grupo 2");
+        check (grade.pads.getReference (56).chokeGroup == 0, "efeitos livres sem choke group");
     }
 
     //------------------------------------------------------------------

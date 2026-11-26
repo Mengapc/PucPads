@@ -4,8 +4,9 @@
 
     Valida a nova estrutura de navegacao sem abrir janela/audio device:
       - 8 botoes de template no rodape;
-      - template 1 carrega notes.json (2 paginas, 128 pads);
-      - templates sem kit abrem grade fantasma 8x8 (64 pads, sem paginas);
+      - template 1 carrega notes.json (grade unica, 64 pads, 3 choke groups);
+      - templates sem kit abrem grade fantasma 8x8 (64 pads);
+      - sem seletor de paginas dentro da grade (choke groups substituem as paginas);
       - play/stop da base ficam desabilitados quando nao ha base musical;
       - o view de um template e reaproveitado ao alternar entre templates.
 
@@ -53,6 +54,19 @@ namespace
         }
 
         return counts;
+    }
+
+    // Quantos pads de cada choke group existem na grade (RF02)
+    int countPadsInGroup (juce::Component& grid, int group)
+    {
+        int total = 0;
+
+        for (int i = 0; i < grid.getNumChildComponents(); ++i)
+            if (auto* pad = dynamic_cast<PadComponent*> (grid.getChildComponent (i)))
+                if (pad->getChokeGroup() == group)
+                    ++total;
+
+        return total;
     }
 
     PadGridComponent* findVisibleGrid (LaunchPadComponent& launchPad)
@@ -178,9 +192,17 @@ int main()
     if (firstGrid != nullptr)
     {
         const auto counts = countGrid (*firstGrid);
-        check (counts.pads == 128, "template 1: 128 pads (encontrados: " + juce::String (counts.pads) + ")");
-        check (counts.buttons == 2, "template 1: 2 botoes de pagina (encontrados: " + juce::String (counts.buttons) + ")");
+        check (counts.pads == 64, "template 1: 64 pads em uma unica grade (encontrados: " + juce::String (counts.pads) + ")");
+        check (firstGrid->getNumPads() == 64, "template 1: getNumPads() = 64");
+        check (counts.buttons == 0, "template 1: sem seletor de paginas (encontrados: " + juce::String (counts.buttons) + " botoes)");
         check (! firstGrid->isEmptyTemplate(), "template 1 nao e grade fantasma");
+
+        // RF02: as tres familias com choke convivem com os pads sem grupo, na mesma grade
+        check (countPadsInGroup (*firstGrid, 0) == 16, "template 1: 16 pads sem choke group (melodia)");
+        check (countPadsInGroup (*firstGrid, 1) == 16, "template 1: 16 pads no choke group 1 (harmonia)");
+        check (countPadsInGroup (*firstGrid, 2) == 16, "template 1: 16 pads no choke group 2 (loops)");
+        check (countPadsInGroup (*firstGrid, 3) == 16, "template 1: 16 pads no choke group 3 (efeitos)");
+
         check (firstGrid->getBounds() == juce::Rectangle<int> (0, 60, 450, 570),
                "grade ocupa a area entre cabecalho (60) e rodape (70): " + firstGrid->getBounds().toString());
         check (firstGrid->hasBackingTrack(), "template 1 carregou a base musical");
@@ -201,7 +223,8 @@ int main()
         const auto counts = countGrid (*ghostGrid);
         check (ghostGrid->isEmptyTemplate(), "template 3 e grade fantasma");
         check (counts.pads == 64, "template 3: 64 pads fantasma 8x8 (encontrados: " + juce::String (counts.pads) + ")");
-        check (counts.buttons == 0, "template 3: sem botoes de pagina");
+        check (counts.buttons == 0, "template 3: nenhum botao dentro da grade");
+        check (countPadsInGroup (*ghostGrid, 0) == 64, "template 3: pads fantasma sem choke group");
         check (! isButtonEnabled (launchPad, "Play Base"), "Play Base desabilitado no template vazio");
     }
 

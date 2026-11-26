@@ -25,4 +25,36 @@ namespace UiTheme
         button.setColour (juce::TextButton::textColourOffId, active ? bordo()   : dourado());
         button.setColour (juce::TextButton::textColourOnId,  active ? bordo()   : dourado());
     }
+
+    //------------------------------------------------------------------
+    // Choke groups (RF02): terceira camada de cor do app.
+    //
+    //   preenchimento do pad -> funcao musical (RF04, vem do kit)
+    //   borda dourada        -> cromo institucional (RNF03)
+    //   anel + selo do grupo -> choke group (esta paleta)
+    //
+    // As cores abaixo evitam os matizes da paleta funcional (verde/azul/rosa/
+    // laranja) e do cromo (bordo/dourado) para os tres codigos nao se
+    // confundirem. Sao ciclicas: do 7o grupo em diante as cores se repetem e o
+    // numero do selo passa a ser a referencia exata.
+    //------------------------------------------------------------------
+    inline juce::Colour chokeGroupColour (int group) noexcept
+    {
+        static const juce::Colour palette[] =
+        {
+            juce::Colour (0xff00e5ff), // ciano
+            juce::Colour (0xffb06cff), // violeta
+            juce::Colour (0xffff3b30), // vermelho
+            juce::Colour (0xffd4ff3f), // lima
+            juce::Colour (0xff00ffc8), // turquesa
+            juce::Colour (0xffc9d6df)  // prata
+        };
+
+        constexpr int paletteSize = (int) (sizeof (palette) / sizeof (palette[0]));
+
+        if (group <= 0)
+            return juce::Colours::transparentBlack;
+
+        return palette[(group - 1) % paletteSize];
+    }
 }

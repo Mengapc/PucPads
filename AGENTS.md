@@ -65,7 +65,7 @@ rítmica, melódica e harmônica, **sem exigir letramento musical prévio**.
     │   ├── MainComponent.{h,cpp}       # Raiz: mixer global + navegação de telas
     │   ├── MenuComponent.{h,cpp}       # Menu principal
     │   ├── LaunchPadComponent.{h,cpp}  # Tela única: 8 templates + play/stop da base
-    │   ├── PadGridComponent.{h,cpp}    # Grade/páginas de UM template + backing track + choke groups
+    │   ├── PadGridComponent.{h,cpp}    # Grade de UM template + backing track + choke groups
     │   ├── PadComponent.{h,cpp}        # Pad individual (sample, cor, playMode, fade visual)
     │   ├── UiTheme.h                   # Cromo institucional (bordô/dourado) — fonte única
     │   ├── KitDefinition.{h,cpp}       # Parser/schema do kit (v2, retrocompatível com v1)
@@ -77,9 +77,9 @@ rítmica, melódica e harmônica, **sem exigir letramento musical prévio**.
     └── Arquivos_PucPads/     # Assets de origem
         ├── C.mp3 D.mp3 E.mp3 F.mp3 G.mp3
         ├── Musica_Jogo.wav
-        ├── KIT_SCHEMA.md     # Especificação do schema v2 + navegação multi-páginas
-        ├── notes.json        # kit "Melodia" (páginas Melodia / Harmonia)
-        └── drumkit.json      # kit "Bateria" (páginas Loops / Efeitos)
+        ├── KIT_SCHEMA.md     # Especificação do schema v2 (páginas aceitas por compatibilidade)
+        ├── notes.json        # kit "Melodia" (grade única: melodia, harmonia, loops, efeitos)
+        └── drumkit.json      # kit "Bateria" (grade única: loops e efeitos)
 ```
 
 Fora de `PucPads/`:
@@ -173,18 +173,17 @@ PadGridComponent::backgroundSource ┘
   visibilidade e realinha a grade.
   - Os recursos dos 8 templates estão no array `kTemplateKitResources` (no `.cpp`): **único ponto
     a mudar** quando os templates passarem a vir de um manifesto/editor.
-- **`PadGridComponent`**: renderiza **um** template. Carrega o kit via `KitDefinition`, cria
-  **todos** os pads das páginas de uma vez em `juce::OwnedArray<Page>`, carrega a *backing track* e
-  faz o *layout* da página ativa. **Não** tem mais `backButton`/`playButton`/`stopButton` — o
-  transporte é comandado pelo `LaunchPadComponent` (`hasBackingTrack()`, `playBackingTrack()`,
-  `stopBackingTrack()`).
+- **`PadGridComponent`**: renderiza **um** template = **uma grade**. Carrega o kit via
+  `KitDefinition`, cria os pads da primeira página em `juce::OwnedArray<PadComponent>`
+  (`buildPads()`), carrega a *backing track* e faz o *layout* em `layoutPads()`. **Não** tem
+  `backButton`/`playButton`/`stopButton` — o transporte é comandado pelo `LaunchPadComponent`
+  (`hasBackingTrack()`, `playBackingTrack()`, `stopBackingTrack()`).
   - Com `kitResource` vazio, monta a **grade fantasma** (`buildEmptyTemplate()`), sem áudio.
-  - **`resized()`**: faixa de páginas de 34 px (**só se o kit tiver mais de uma página**) e a grade
-    (`kit.columns × kit.rows`). O rodapé de 70 px agora pertence ao `LaunchPadComponent`.
-  - **Choke groups (RF02)**: `handlePadTriggered()` interrompe os pads do mesmo grupo — inclusive
-    de outras páginas do mesmo kit — via `PadComponent::chokeStop()`.
-  - Trocar de página **não recria** `AudioTransportSource`s: apenas alterna visibilidade/layout e
-    interrompe samples da página que saiu.
+  - **`resized()`**: só a grade (`kit.columns × kit.rows`). Não existe mais faixa de páginas; o
+    cabeçalho (60 px) e o rodapé (70 px) pertencem ao `LaunchPadComponent`.
+  - Kit com mais de uma página no JSON: a tela exibe **apenas a primeira** (aviso em `DBG`).
+  - **Choke groups (RF02)**: `handlePadTriggered()` interrompe os pads do mesmo grupo dentro do
+    template via `PadComponent::chokeStop()`.
 - **`MenuComponent`**: menu introdutório com dois `TextButton`s públicos (`launchPadButton` e
   `settingsButton`) e o título desenhado em `paint()`.
 - **`SettingsComponent`**: `masterVolumeSlider`, `backingTrackSlider` (vertical), labels e
@@ -264,10 +263,11 @@ Regras que **não** podem ser quebradas:
 
 ### 5.3 Estado dos kits e Git LFS
 
-- `notes.json` (Kit Melodia): páginas **Melodia** (`melodia`/gate) e **Harmonia**
-  (`harmonia`/one-shot/choke group 1), 64 pads cada.
-- `drumkit.json` (Kit Bateria): páginas **Loops** (`loop`/one-shot/choke group 2) e **Efeitos**
-  (`efeito`/one-shot), 64 pads cada.
+- `notes.json` (Kit Melodia): **uma página** de 64 pads com quatro famílias — melodia
+  (`melodia`/gate/sem grupo), harmonia (`harmonia`/one-shot/**g1**), loops (`loop`/one-shot/**g2**)
+  e efeitos (`efeito`/one-shot/**g3**), 16 pads cada.
+- `drumkit.json` (Kit Bateria): **uma página** de 64 pads — loops (`loop`/one-shot/**g1**, 32),
+  efeitos com choke (`efeito`/one-shot/**g2**, 24) e efeitos livres (sem grupo, 8).
 - Os dois kits usam **os mesmos 5 samples** (C–G, placeholders) — a diferença hoje é
   organizacional/semântica, não de conteúdo sonoro. Samples reais são débito de conteúdo (§13.2).
 - `.gitattributes` marca `*.mp3`, `*.wav`, `*.aiff` como **Git LFS**. No working tree esses
@@ -446,17 +446,19 @@ continua dependendo de Projucer + IDE. O que **é** possível validar aqui:
 4. Em `LaunchPadComponent.cpp`, aponte um slot de `kTemplateKitResources` para
    `"NovoKit_json"` (lembre do *mangling* `.` → `_`). **Nada** muda no `MainComponent`.
 
-### Adicionar uma página a um kit existente
-- Acrescente um objeto `{ "name": "...", "pads": [...] }` em `pages`.
-- `name` deve ser único e curto (vira rótulo do botão da faixa de páginas, logo abaixo do cabeçalho).
-- Nenhuma mudança de código é necessária: o número de botões é derivado de `pages.size()`.
-- Cada página suporta até `grid.columns × grid.rows` pads.
+### Adicionar choke groups a um kit existente
+- Um template é **uma grade**: a variedade vem do `chokeGroup` de cada pad, não de páginas.
+- Use `chokeGroup: 1..N` nas "famílias" que devem se cortar (ex.: `1` acordes, `2` loops,
+  `3` efeitos longos) e **omita** o campo (ou use `0`) nos pads que tocam juntos.
+- Nenhuma mudança de código: `PadGridComponent` resolve os grupos e `PadComponent` desenha o anel
+  e o selo com o número do grupo (`UiTheme::chokeGroupColour()`).
+- O array `pages` continua aceito por compatibilidade, mas a UI usa só a primeira página.
 
 ### Ajustar a grade de pads
-A geometria está em `PadGridComponent::layoutPage()`. Agora ela usa **`kit.columns`/`kit.rows`**
+A geometria está em `PadGridComponent::layoutPads()`. Ela usa **`kit.columns`/`kit.rows`**
 (default 8 × 8, vindos do JSON) e só posiciona os pads existentes. Cabeçalho: 60 px (no
-`LaunchPadComponent`); faixa de páginas: 34 px, só quando há mais de uma página; rodapé de
-templates: 70 px. Para mudar a densidade, prefira editar o `grid` do JSON a mexer no código.
+`LaunchPadComponent`); rodapé de templates: 70 px. Para mudar a densidade, prefira editar o
+`grid` do JSON a mexer no código.
 
 ### Templates de LaunchPad (rodapé) — **implementado**
 - O rodapé do `LaunchPadComponent` tem **8 botões numerados**; cada um é um template (um kit).
@@ -468,15 +470,20 @@ templates: 70 px. Para mudar a densidade, prefira editar o `grid` do JSON a mexe
 - Ao criar/remover templates, ajuste `numTemplates` **e** o array (o teste
   `tools/run_launchpad_test.sh` cobre a contagem de botões).
 
-### Navegação multi-páginas (RF01) — **implementado**
-- `KitDefinition` entrega `pages[]`; `PadGridComponent` cria um `Page` (`OwnedArray<PadComponent>`)
-  por página em `buildPages()`, gera um botão por página em `buildPageButtons()` e alterna em
-  `showPage(i)`. Os botões vivem na **faixa de 34 px abaixo do cabeçalho** (o rodapé passou a ser
-  dos templates).
-- Trocas **não** recriam `AudioTransportSource`s — apenas `setVisible` + `layoutPage()`.
-- A aba ativa é sinalizada invertendo bordô/dourado (§6.1); kits de página única não mostram botões.
-- Ao estender (ex.: gesto de swipe, indicador "2/5"), mantenha `showPage()` como único ponto de
-  troca de estado.
+### Feedback visual do choke group (RF02) — **implementado**
+- Três camadas de cor no mesmo pad: preenchimento = função musical (RF04), anel + selo = choke
+  group, pad sem anel de grupo = nunca é cortado.
+- `PadComponent::paint()` usa `UiTheme::chokeGroupColour(chokeGroup)` no anel (2 px) e desenha o
+  número do grupo num selo circular no canto superior direito (`paintChokeBadge()`).
+- O selo é omitido em pads menores que 34 × 22 px (a borda colorida continua identificando o grupo).
+- A paleta de grupos é **independente** da paleta funcional e do cromo e cicla a cada 6 grupos;
+  por isso o número do selo é a referência exata.
+- Para mudar as cores, mexa **só** em `UiTheme::chokeGroupColour()`.
+
+### Páginas no JSON (compatibilidade)
+- `KitDefinition` continua lendo `pages[]` (v2) e `pads[]` na raiz (v1) — o parser não mudou.
+- A UI é **um template = uma grade**: `PadGridComponent::loadKit()` usa `kit.pages.getReference(0)`
+  e avisa em `DBG` quando há páginas extras; kits novos devem ter uma única página.
 
 ### Choke groups (RF02) — **implementado**
 - `chokeGroup` vem do JSON; o escopo é o **kit inteiro** (não só a página visível).
@@ -495,7 +502,7 @@ implementar.
 
 | Req. | Descrição resumida | Onde está / onde vai |
 | --- | --- | --- |
-| RF01 | Disparo polifônico + múltiplas páginas/templates | Polifonia: `MixerAudioSource` (feito). Páginas: `KitDefinition::pages` + `PadGridComponent::showPage()` (faixa de 34 px). Templates: `LaunchPadComponent` + rodapé com 8 botões (feito) |
+| RF01 | Disparo polifônico + templates | Polifonia: `MixerAudioSource` (feito). Templates: `LaunchPadComponent` + rodapé com 8 botões (feito). `pages[]` segue no parser por compatibilidade, mas a UI usa **uma grade por template** (choke groups no lugar de páginas, RF02) |
 | RF02 | Choke groups ilimitados, fade-out 15–30 ms | **Feito** — `KitPad::chokeGroup` → `PadGridComponent::handlePadTriggered()` → `PadComponent::chokeStop()` (fade de 1 bloco + stop em 25 ms) |
 | RF03 | Pad Editor (volume, pitch, envelopes, trim, clonar/remover) | **A implementar** (`PadEditorComponent`, `juce::ResamplingAudioSource`). `gainDb` por pad já é lido do JSON |
 | RF04 | Cores semânticas por função musical | **Feito** — `KitDefinition::colourForFunction()` + `function`/`color` no JSON (§6.2) |
@@ -517,17 +524,17 @@ Não existe CI nem suíte rodando na IDE, mas há **duas verificações automati
 | --- | --- | --- |
 | `python3 tools/validate_kits.py` | schema, `audioFile` existente, faixas de `gainDb`/`chokeGroup`, nomes de página duplicados, capacidade da grade, paleta | ✅ |
 | `JUCE_DIR=... ./tools/run_kit_parser_test.sh` | parser C++ real: kits atuais, regras de cor, `playMode`, `chokeGroup`, `gainDb`, grade customizada, descarte de pad inválido, **compatibilidade v1** | ✅ (requer baixar JUCE + libs) |
-| `JUCE_DIR=... ./tools/run_launchpad_test.sh` | tela de Launch Pad *headless*: 8 botões de template, template 1 com 128 pads/2 páginas, grade fantasma 8×8 nos templates vazios, play/stop habilitado só com base válida, *layout* (60/70 px) e cache de views | ✅ (requer baixar JUCE + libs) |
+| `JUCE_DIR=... ./tools/run_launchpad_test.sh` | tela de Launch Pad *headless*: 8 botões de template, template 1 com **64 pads em grade única** (16 por choke group 0/1/2/3) e **sem seletor de páginas**, grade fantasma 8×8 nos templates vazios, play/stop habilitado só com base válida, *layout* (60/70 px) e cache de views | ✅ (requer baixar JUCE + libs) |
 
 - **Adicione caso de teste** ao `kit_parser_smoke_test.cpp` sempre que o schema ganhar campo novo.
   Ele é um alvo de console (módulos core/events/graphics), não faz parte do binário do app.
 - Verificação **manual** continua necessária para UI/áudio: compilar na IDE e testar
   clique/multitouch no desktop e no Android.
 - Checklist mínimo antes de entregar: carregar o template 1; alternar entre os 8 templates
-  (voltar ao 1 deve manter o kit carregado); trocar de página com sample tocando (o som deve ser
-  interrompido); disparar pads do mesmo choke group em sequência (sem *click*); play/stop da
+  (voltar ao 1 deve manter o kit carregado); disparar dois pads do mesmo choke group em sequência
+  (o primeiro deve ser cortado, sem *click*) e conferir anel + selo do grupo; play/stop da
   *backing track* (desabilitado nos templates sem kit); navegar entre as três telas e voltar; sem
-  *crash* ao trocar de template/página repetidamente (leak detector do JUCE em Debug).
+  *crash* ao trocar de template repetidamente (leak detector do JUCE em Debug).
 
 ---
 
@@ -552,7 +559,8 @@ Não existe CI nem suíte rodando na IDE, mas há **duas verificações automati
 
 ### 13.1 Próximas sprints (SDD §6.2) — prioridade oficial
 1. ~~**Navegação multi-páginas + semântica de cores** nos kits padrão.~~ ✅ **Concluído**
-   (schema v2, `PadGridComponent::showPage()`, paleta RF04 nos dois kits).
+   (schema v2 + paleta RF04 nos dois kits) e depois **substituído** por grade única com choke
+   groups e feedback visual (decisão de produto: a navegação de páginas saiu da UI).
 2. ~~**Motor de choke groups** (ilimitado, *fade-out* 15–30 ms sem *clicks*).~~ ✅ **Concluído**
    (fade de ~1 bloco + stop agendado; envelope amostra a amostra segue como débito §13.2.5).
 3. **Pad Editor:** faders reais (Master, Backing, volume por pad), *pitch* em tempo real,
@@ -564,11 +572,10 @@ Não existe CI nem suíte rodando na IDE, mas há **duas verificações automati
 ### 13.2 Débitos e armadilhas verificados no código atual
 1. **Sliders de `SettingsComponent` sem efeito** — UI apenas; ligação ao mixer é pendente (RF03).
    `KitPad::gainDb` já existe no schema; falta a UI de edição.
-2. **Conteúdo dos kits continua genérico** — as páginas agora diferem em função/choke group, mas
-   os dois kits ainda usam os mesmos 5 samples (C–G). Falta material sonoro real de bateria/loops.
-3. **Todas as páginas são instanciadas no load** — 128 `AudioTransportSource` por kit hoje são
-   inofensivos (samples de 45 KB). Com kits reais e muitas páginas, migrar para *pool de vozes*
-   com carga por página (§`KIT_SCHEMA.md` §15).
+2. **Conteúdo dos kits continua genérico** — os pads agora diferem em função/choke group, mas os
+   dois kits ainda usam os mesmos 5 samples (C–G). Falta material sonoro real de bateria/loops.
+3. **Toda a grade é instanciada no load** — 64 `AudioTransportSource` por template hoje são
+   inofensivos (samples de 45 KB). Com kits reais, migrar para *pool de vozes* (§`KIT_SCHEMA.md` §15).
 4. **`BinaryData.cpp` com ~47 MB comitado** — infla o repositório; avaliar regeneração fora do
    git ou LFS.
 5. **Fade de choke é de granularidade de bloco** (`setGain` + stop em 25 ms), não envelope

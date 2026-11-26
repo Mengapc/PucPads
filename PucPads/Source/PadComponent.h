@@ -48,6 +48,11 @@ private:
     void setupAudio(const char* soundData, int soundDataSize, juce::MixerAudioSource& mixerToUse);
     void finishChokeStop();
 
+    // Selo com o numero do choke group (canto superior direito). Grupos valem
+    // por template: o pad mostra a que grupo pertence para o usuario entender
+    // por que um pad corta o outro.
+    void paintChokeBadge (juce::Graphics& g, juce::Colour groupColour) const;
+
     static constexpr int chokeFadeMs = 25; // duracao do fade de choke (15-30 ms)
 
     juce::MixerAudioSource& mixerRef;
