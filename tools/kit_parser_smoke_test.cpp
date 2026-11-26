@@ -167,6 +167,39 @@ namespace
     }
 
     //------------------------------------------------------------------
+    void testParserLimits (const juce::File& file)
+    {
+        std::cout << "limites: " << file.getFileName() << std::endl;
+
+        const auto kit = parseFile (file);
+
+        check (kit.isValid(), "kit com valores fora da faixa continua valido");
+        check (kit.columns == 16, "grid.columns acima do limite e truncado em 16");
+        check (kit.rows == 8, "grid.rows negativo cai no padrao 8");
+
+        if (kit.pages.isEmpty())
+            return;
+
+        const auto& pads = kit.pages.getReference (0).pads;
+        check (pads.size() == 8, "8 pads validos");
+
+        if (pads.size() < 8)
+            return;
+
+        check (pads.getReference (0).gainDb == 12.0f, "gainDb acima de +12 dB e limitado");
+        check (pads.getReference (1).gainDb == -60.0f, "gainDb abaixo de -60 dB e limitado");
+        check (argb (pads.getReference (2).colour)
+                   == argb (KitDefinition::colourForFunction ("melodia")),
+               "'color' invalido cai na cor da funcao (nao vira pad transparente)");
+        check (argb (pads.getReference (3).colour) == argb (juce::Colour::fromString ("ffff00ff")),
+               "cor de 6 digitos (#ff00ff) e completada com alpha opaco");
+        check (! pads.getReference (4).oneShot, "playMode desconhecido cai em gate");
+        check (pads.getReference (5).gainDb == 0.0f, "gainDb nao numerico vira 0 dB");
+        check (pads.getReference (6).chokeGroup == 0, "chokeGroup nao inteiro e ignorado");
+        check (pads.getReference (7).chokeGroup == 0, "chokeGroup negativo e ignorado");
+    }
+
+    //------------------------------------------------------------------
 }
 
 int main()
@@ -209,6 +242,28 @@ int main()
     })");
 
     testOverridesAndFallbacks (rulesFile);
+
+    // --- Fixture inline: limites do parser (grade, ganho, cor, playMode) ---
+    const auto limitsFile = scratch.getChildFile ("kit_limits.json");
+    limitsFile.replaceWithText (R"({
+        "schemaVersion": 2,
+        "kit": { "name": "Limites" },
+        "grid": { "columns": 999, "rows": -3 },
+        "pages": [
+            { "name": "Unica", "pads": [
+                { "audioFile": "C.mp3", "gainDb": 40.0 },
+                { "audioFile": "D.mp3", "gainDb": -200 },
+                { "audioFile": "E.mp3", "function": "melodia", "color": "verde" },
+                { "audioFile": "F.mp3", "color": "#ff00ff" },
+                { "audioFile": "G.mp3", "playMode": "hold" },
+                { "audioFile": "C.mp3", "gainDb": "alto" },
+                { "audioFile": "D.mp3", "chokeGroup": "g1" },
+                { "audioFile": "E.mp3", "chokeGroup": -4 }
+            ] }
+        ]
+    })");
+
+    testParserLimits (limitsFile);
 
     std::cout << (failures == 0 ? "\nOK: parser aprovado nos testes de fumaca."
                                 : "\nFALHOU: " + juce::String (failures) + " verificacao(oes).")

@@ -28,8 +28,17 @@ public:
     // Pad fantasma (templates sem kit): desenhado, mas mudo e nao interativo.
     bool isEmptyPad() const noexcept { return ! hasAudio; }
 
-    // (Des)liga o pad via choke group / troca de pagina, com fade curto para evitar estalos.
+    // (Des)liga o pad via choke group / troca de template, com fade curto para evitar estalos.
     void chokeStop();
+
+    // Aciona o pad: equivale ao toque. Fica separado dos eventos de mouse para
+    // que o fluxo de audio (gate/one-shot/choke) possa ser exercitado por testes
+    // sem sintetizar MouseEvent.
+    void trigger();
+
+    // Solta a nota em modo gate (parar o sample). Em modo one-shot nao faz nada:
+    // o sample toca ate o fim.
+    void releaseGate();
 
     // Disparado quando este pad e acionado. O PadGridComponent usa para resolver
     // os grupos de exclusao mutua.

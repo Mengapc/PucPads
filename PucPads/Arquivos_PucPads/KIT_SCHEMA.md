@@ -228,3 +228,25 @@ registrados no `MixerAudioSource`. Com samples placeholder (≈45 KB) isso é ir
 reais a soma de fontes de áudio pode pesar. A evolução planejada é um **pool de vozes** — a
 estrutura de `KitPad` já separa o dado do componente de UI e permite essa troca sem tocar no
 formato do arquivo.
+
+---
+
+## Validacao aplicada pelo parser (e pelo `tools/validate_kits.py`)
+
+O parser **nunca falha** por causa de um campo opcional mal preenchido: ele avisa em `DBG` e cai
+no valor padrao, para que um erro de digitacao no kit nao deixe a tela em branco. Regras:
+
+| Campo | Regra | Se estiver invalido |
+| --- | --- | --- |
+| `grid.columns` / `grid.rows` | inteiro entre 1 e **16** | negativo/zero -> 8; acima de 16 -> 16 |
+| `gainDb` | numero entre **-60** e **+12** dB | fora da faixa -> limitado; nao numerico -> 0 dB |
+| `color` | hex **AARRGGBB** (8 digitos) ou **RRGGBB** (6, com ou sem `#`) | invalido -> cor da `function` (nunca pad transparente) |
+| `playMode` | `gate` (padrao) ou `oneshot` | desconhecido -> `gate` |
+| `chokeGroup` | inteiro >= 0 (0 = sem grupo) | nao inteiro ou negativo -> 0 |
+| `audioFile` | obrigatorio e existente em `Arquivos_PucPads/` | pad descartado com aviso |
+
+Observacao: `Colour::fromString()` do JUCE **ignora** caracteres nao hexadecimais, entao um valor
+de 6 digitos era lido como alpha `00` (pad invisivel). O parser completa o alpha para `ff`.
+
+Kit com estrutura invalida (sem paginas ou grade impossivel) abre a **grade fantasma** em vez de
+deixar a area de performance vazia.

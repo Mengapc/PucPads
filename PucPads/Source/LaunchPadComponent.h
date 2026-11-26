@@ -29,6 +29,11 @@ public:
     // Botao de retorno ao menu (o MainComponent escuta este botao)
     juce::TextButton backButton{ " < " };
 
+    // Volume da base musical (0..1) de todos os templates. O valor fica guardado
+    // aqui para valer tambem nos templates criados sob demanda depois.
+    void setBackingGain (float gain);
+    float getBackingGain() const noexcept { return backingGain; }
+
 private:
     // Um slot do rodape. kitResource vazio = template ainda sem arquivo JSON.
     struct TemplateSlot
@@ -54,6 +59,7 @@ private:
     juce::MixerAudioSource& mixerSource;
     std::vector<TemplateSlot> templates;
     int currentTemplate = 0;
+    float backingGain = 1.0f;
 
     juce::OwnedArray<juce::TextButton> templateButtons;
 

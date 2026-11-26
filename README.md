@@ -1,5 +1,18 @@
 # Software Design Document (SDD) – PucPads
 
+
+### Verificacoes automatizadas (estado atual)
+
+| Comando | Cobre |
+| --- | --- |
+| `python3 tools/validate_kits.py` | schema, samples existentes, faixas de `gainDb`/`chokeGroup`, capacidade da grade |
+| `./tools/run_compile_check.sh` (com `JUCE_DIR`) | compila (`-fsyntax-only`) **todas** as fontes de `PucPads/Source` |
+| `./tools/run_kit_parser_test.sh` (com `JUCE_DIR`) | parser C++ real: v2, compatibilidade v1, limites e fallbacks |
+| `./tools/run_launchpad_test.sh` (com `JUCE_DIR`) | 8 templates, 64 pads em grade unica, choke groups, grade fantasma, gate/one-shot, volume da base |
+
+O mixer esta ligado: os sliders de **Master** e **Base** aplicam ganho de verdade
+(`MainComponent::setMasterGain` / `setBackingGain`, com rampa de 50 ms no master).
+
 ## 1. Introdução
 
 ### 1.1 Propósito

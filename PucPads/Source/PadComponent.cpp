@@ -37,7 +37,10 @@ PadComponent::~PadComponent()
 {
     stopTimer();
 
-    mixerRef.removeInputSource(&transportSource);
+    // Sair do mixer e o que garante que o audio thread nao use mais este pad:
+    // removeInputSource espera o bloco em curso terminar. O AudioTransportSource
+    // entao e destruido logo depois (membro), liberando o reader com seguranca.
+    mixerRef.removeInputSource (&transportSource);
 }
 
 void PadComponent::paint (juce::Graphics& g)
@@ -107,7 +110,27 @@ void PadComponent::resized()
 {
 }
 
-void PadComponent::mouseDown (const juce::MouseEvent& event)
+void PadComponent::mouseDown (const juce::MouseEvent&)
+{
+    trigger();
+}
+
+void PadComponent::mouseUp (const juce::MouseEvent&)
+{
+    releaseGate();
+}
+
+void PadComponent::mouseExit (const juce::MouseEvent&)
+{
+    // Em multitouch/arrasto, o dedo pode sair do pad e a soltura nunca chegar
+    // a este componente: sem isso a nota em modo gate ficaria presa ate o
+    // proximo choke (ou ate trocar de template).
+    if (isMouseDown)
+        releaseGate();
+}
+
+//==============================================================================
+void PadComponent::trigger()
 {
     // Pad fantasma nao reage ao toque: sinalizar brilho daria a falsa impressao de som
     if (! hasAudio)
@@ -124,44 +147,35 @@ void PadComponent::mouseDown (const juce::MouseEvent& event)
 
     // Resolve os choke groups ANTES de tocar, para nao cortar o proprio pad
     if (onTriggered != nullptr)
-        onTriggered(this);
+        onTriggered (this);
 
-    transportSource.setPosition(0);   // Rebobina o som para o inicio
-    transportSource.setGain(baseGain);
+    transportSource.setPosition (0);   // Rebobina o som para o inicio
+    transportSource.setGain (baseGain);
     transportSource.start();          // Toca o som
 
     if (oneShot)
-        startTimerHz(60);             // acompanha o fim do sample para apagar o brilho
+        startTimerHz (60);             // acompanha o fim do sample para apagar o brilho
 
     repaint();
 }
 
-void PadComponent::mouseUp (const juce::MouseEvent& event)
+void PadComponent::releaseGate()
 {
     if (! hasAudio)
         return;
 
     isMouseDown = false;
 
+    // One-shot: o sample segue ate o fim; o timer apenas apaga o brilho no final.
     if (! oneShot)
     {
         transportSource.stop();
-        transportSource.setGain(baseGain);
+        transportSource.setGain (baseGain);
     }
 
     // Inicia a animacao a 60 quadros por segundo (60 Hz)
-    startTimerHz(60);
+    startTimerHz (60);
     repaint();
-}
-
-void PadComponent::mouseExit(const juce::MouseEvent& event)
-{
-    if (isMouseDown)
-    {
-        isMouseDown = false;
-        // transportSource.stop(); // Se usar modo Gate
-        repaint();
-    }
 }
 
 void PadComponent::chokeStop()

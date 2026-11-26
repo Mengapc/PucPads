@@ -22,6 +22,14 @@ public:
     void paint(juce::Graphics&) override;
     void resized() override;
 
+    // Mixer: ganho master linear (0..1), aplicado no audio thread com rampa curta.
+    void setMasterGain(float linearGain);
+    float getMasterGain() const noexcept { return masterGain.load(); }
+
+    // Volume da base musical (0..1): repassado ao LaunchPad/template ativo.
+    void setBackingGain(float linearGain);
+    float getBackingGain() const noexcept { return backingGain; }
+
     // Funções de Navegação
     void showLaunchPadScreen(); // Tela unica de performance (pads + templates)
     void showSettingsScreen();  // Mixer & Configuracoes
@@ -31,6 +39,15 @@ public:
 
 private:
     juce::MixerAudioSource mixerSource;
+
+    // Ganho master: valor definido pela UI (lido pelo audio thread) e rampa
+    // usada para evitar estalo ao mover o slider.
+    std::atomic<float> masterGain { 1.0f };
+    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> masterGainRamp;
+
+    // Ganho da base musical, guardado para reaplicar em cada tela de LaunchPad
+    // (a tela e recriada a cada entrada no modo performance).
+    float backingGain = 1.0f;
 
     // Nossas tres "telas" gerenciadas com unique_ptr
     std::unique_ptr<MenuComponent> menuScreen;

@@ -36,6 +36,14 @@ struct KitPage
 inline constexpr int kKitDefaultColumns = 8;
 inline constexpr int kKitDefaultRows    = 8;
 
+// Limites aplicados pelo parser (espelhados em tools/validate_kits.py):
+//   - grade: 1..16 por lado. Sem teto, um "grid" errado no JSON criaria
+//     milhares de pads e travaria a UI ao abrir o template.
+//   - ganho: -60..+12 dB. Valor absurdo estouraria o mix e a audicao do usuario.
+inline constexpr int   kKitMaxGridSide = 16;
+inline constexpr float kKitMinGainDb   = -60.0f;
+inline constexpr float kKitMaxGainDb   = 12.0f;
+
 struct KitDefinition
 {
     juce::String name;

@@ -34,6 +34,12 @@ public:
     void playBackingTrack();
     void stopBackingTrack();
 
+    // Volume da base musical (0..1). Fica guardado aqui para valer tambem em uma
+    // base que ainda nao terminou de carregar e para templates criados depois
+    // (o MainComponent aplica o valor do mixer ao abrir a tela).
+    void setBackingGain (float gain);
+    float getBackingGain() const noexcept { return backingGain; }
+
     // Interrompe todos os samples em execucao (troca de template ou saida da tela).
     void stopAllPads();
 
@@ -57,6 +63,7 @@ private:
     juce::OwnedArray<PadComponent> pads;
     bool isGhostTemplate = false;
     bool backingLoaded = false;
+    float backingGain = 1.0f;
 
     juce::AudioFormatManager formatManager; // Gerenciador de formatos (mp3, wav)
     std::unique_ptr<juce::AudioFormatReaderSource> backgroundReaderSource;

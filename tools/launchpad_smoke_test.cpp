@@ -69,6 +69,37 @@ namespace
         return total;
     }
 
+    // Primeiro pad de um choke group (occurrence = 0 e o primeiro da grade)
+    PadComponent* findPadInGroup (juce::Component& grid, int group, int occurrence)
+    {
+        int seen = 0;
+
+        for (int i = 0; i < grid.getNumChildComponents(); ++i)
+            if (auto* pad = dynamic_cast<PadComponent*> (grid.getChildComponent (i)))
+                if (pad->getChokeGroup() == group && seen++ == occurrence)
+                    return pad;
+
+        return nullptr;
+    }
+
+    // Bombeia a fila de mensagens: necessario para os timers do fade de choke
+    // (Timer::callAfterDelay) rodarem. Requer JUCE_MODAL_LOOPS_PERMITTED=1,
+    // definido no script de build deste teste.
+    void runMessageLoop (int milliseconds)
+    {
+        juce::MessageManager::getInstance()->runDispatchLoopUntil (milliseconds);
+    }
+
+    float visibleGridBackingGain (LaunchPadComponent& launchPad)
+    {
+        for (int i = 0; i < launchPad.getNumChildComponents(); ++i)
+            if (auto* grid = dynamic_cast<PadGridComponent*> (launchPad.getChildComponent (i)))
+                if (grid->isVisible())
+                    return grid->getBackingGain();
+
+        return -1.0f;
+    }
+
     PadGridComponent* findVisibleGrid (LaunchPadComponent& launchPad)
     {
         for (int i = 0; i < launchPad.getNumChildComponents(); ++i)
@@ -137,6 +168,16 @@ namespace
         std::cout << (writeSilentWav (wav, 44100, 0.25) ? "Base musical de teste criada"
                                                        : "FALHA ao criar base musical de teste")
                   << std::endl;
+
+        // Os samples do repositorio sao ponteiros LFS: gera WAVs validos no lugar
+        // para que os pads carreguem audio de verdade (testes de gate/choke).
+        int samplesCriados = 0;
+
+        for (const auto* name : { "C.mp3", "D.mp3", "E.mp3", "F.mp3", "G.mp3" })
+            if (writeSilentWav (target.getChildFile (name), 44100, 2.0))
+                ++samplesCriados;
+
+        std::cout << "Samples de teste criados: " << samplesCriados << "/5" << std::endl;
 
         return target;
     }
@@ -226,6 +267,13 @@ int main()
         check (counts.buttons == 0, "template 3: nenhum botao dentro da grade");
         check (countPadsInGroup (*ghostGrid, 0) == 64, "template 3: pads fantasma sem choke group");
         check (! isButtonEnabled (launchPad, "Play Base"), "Play Base desabilitado no template vazio");
+
+        if (auto* ghostPad = findPadInGroup (*ghostGrid, 0, 0))
+        {
+            ghostPad->trigger();
+            check (! ghostPad->getTransportSource().isPlaying(), "pad fantasma nao toca ao ser acionado");
+            check (ghostPad->isEmptyPad(), "pad fantasma se identifica como vazio");
+        }
     }
 
     check (firstGrid != nullptr && ! firstGrid->isVisible(), "grade do template 1 ficou oculta");
@@ -239,6 +287,75 @@ int main()
     auto* backGrid = findVisibleGrid (launchPad);
     check (backGrid == firstGrid, "o view do template 1 foi reaproveitado (sem recriar AudioTransportSource)");
     check (isButtonEnabled (launchPad, "Play Base"), "Play Base volta a ficar habilitado no template 1");
+
+    // --- Comportamento de audio: gate e choke group (RF02) ------------------
+    std::cout << "== Pads: gate, choke group e volume da base ==" << std::endl;
+
+    if (firstGrid != nullptr)
+    {
+        auto* gatePad = findPadInGroup (*firstGrid, 0, 0); // melodia: gate, sem grupo
+        auto* chokeA  = findPadInGroup (*firstGrid, 2, 0); // loops: choke group 2
+        auto* chokeB  = findPadInGroup (*firstGrid, 2, 1);
+
+        check (gatePad != nullptr && chokeA != nullptr && chokeB != nullptr,
+               "pads de teste encontrados na grade");
+
+        if (gatePad != nullptr)
+        {
+            check (! gatePad->isEmptyPad(), "pad de melodia carregou audio");
+
+            gatePad->trigger();
+            check (gatePad->getTransportSource().isPlaying(), "gate: toca ao acionar");
+
+            gatePad->releaseGate();
+            check (! gatePad->getTransportSource().isPlaying(), "gate: para ao soltar (sem nota presa)");
+
+            gatePad->releaseGate();
+            check (! gatePad->getTransportSource().isPlaying(), "gate: soltura repetida e inofensiva");
+        }
+
+        if (chokeA != nullptr && chokeB != nullptr)
+        {
+            chokeA->trigger();
+            check (chokeA->getTransportSource().isPlaying(), "choke: pad do grupo 2 toca");
+
+            chokeB->trigger(); // mesmo grupo: deve cortar A com fade
+            check (chokeA->getTransportSource().getGain() == 0.0f,
+                   "choke: vizinho do mesmo grupo zera o ganho do pad anterior");
+
+            runMessageLoop (120);
+            check (! chokeA->getTransportSource().isPlaying(),
+                   "choke: pad anterior e parado depois do fade");
+            check (chokeB->getTransportSource().isPlaying(),
+                   "choke: o pad acionado continua tocando");
+
+            // Reacionar dentro da janela de fade cancela o corte pendente
+            chokeA->trigger();
+            chokeB->trigger();
+            chokeA->trigger();
+            runMessageLoop (120);
+
+            check (chokeA->getTransportSource().isPlaying(),
+                   "choke: reacionar o pad dentro do fade cancela o corte");
+        }
+    }
+
+    // --- Volume da base musical --------------------------------------------
+    launchPad.setBackingGain (0.5f);
+    check (visibleGridBackingGain (launchPad) == 0.5f,
+           "volume da base aplicado ao template ativo");
+
+    if (auto* fourth = findTemplateButton (launchPad, "4"))
+        fourth->onClick();
+
+    check (visibleGridBackingGain (launchPad) == 0.5f,
+           "template criado depois herda o volume da base");
+
+    if (auto* again = findTemplateButton (launchPad, "1"))
+        again->onClick();
+
+    launchPad.setBackingGain (1.0f);
+    check (visibleGridBackingGain (launchPad) == 1.0f, "volume volta a 100% para o teste de layout");
 
     // --- Redimensionamento -------------------------------------------------
     launchPad.setBounds (0, 0, 800, 1000);

@@ -86,6 +86,7 @@ void LaunchPadComponent::showTemplate (int index)
     if (slot.view == nullptr)
     {
         slot.view = std::make_unique<PadGridComponent> (mixerSource, slot.kitResource);
+        slot.view->setBackingGain (backingGain); // templates criados depois herdam o volume do mixer
         addChildComponent (*slot.view);
     }
 
@@ -97,6 +98,16 @@ void LaunchPadComponent::showTemplate (int index)
     updateTransportButtons();
     resized();
     repaint();
+}
+
+//==============================================================================
+void LaunchPadComponent::setBackingGain (float gain)
+{
+    backingGain = juce::jlimit (0.0f, 1.0f, gain);
+
+    for (auto& slot : templates)
+        if (slot.view != nullptr)
+            slot.view->setBackingGain (backingGain);
 }
 
 //==============================================================================

@@ -32,16 +32,52 @@ MainComponent::~MainComponent()
 void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
 {
     mixerSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
+
+    // Rampa de 50 ms: tempo suficiente para o slider nao estalar e curto o
+    // bastante para a resposta parecer imediata.
+    masterGainRamp.reset(sampleRate, 0.05);
+    masterGainRamp.setCurrentAndTargetValue(masterGain.load());
 }
 
 void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
+    // O mixer pode delegar a uma unica fonte que nao preenche todos os canais;
+    // limpar o bloco garante silencio em vez de repetir lixo do buffer anterior.
+    bufferToFill.clearActiveBufferRegion();
+
     mixerSource.getNextAudioBlock(bufferToFill);
+
+    if (bufferToFill.buffer == nullptr || bufferToFill.numSamples <= 0)
+        return;
+
+    // Rampa por bloco (independente de canal) a partir do valor atual: nao
+    // depende de startSample, ao contrario de SmoothedValue::applyGain(buffer).
+    masterGainRamp.setTargetValue(masterGain.load());
+
+    const auto gainInicio = masterGainRamp.getCurrentValue();
+    const auto gainFim    = masterGainRamp.skip(bufferToFill.numSamples);
+
+    bufferToFill.buffer->applyGainRamp(bufferToFill.startSample, bufferToFill.numSamples,
+                                       gainInicio, gainFim);
 }
 
 void MainComponent::releaseResources()
 {
     mixerSource.releaseResources();
+}
+
+void MainComponent::setMasterGain(float linearGain)
+{
+    // Só o valor é publicado aqui; o audio thread aplica com rampa.
+    masterGain.store(juce::jlimit(0.0f, 1.0f, linearGain));
+}
+
+void MainComponent::setBackingGain(float linearGain)
+{
+    backingGain = juce::jlimit(0.0f, 1.0f, linearGain);
+
+    if (launchPadScreen != nullptr)
+        launchPadScreen->setBackingGain(backingGain);
 }
 
 //==============================================================================
@@ -81,6 +117,7 @@ void MainComponent::showLaunchPadScreen()
 
     launchPadScreen = std::make_unique<LaunchPadComponent>(mixerSource);
     launchPadScreen->backButton.addListener(this);
+    launchPadScreen->setBackingGain(backingGain); // conserva o volume do mixer entre entradas
 
     addAndMakeVisible(*launchPadScreen);
     launchPadScreen->setBounds(getLocalBounds());
@@ -98,9 +135,17 @@ void MainComponent::showSettingsScreen()
         settingsScreen = std::make_unique<SettingsComponent>();
         // O MainComponent começa a escutar o botão "Voltar"
         settingsScreen->backButton.addListener(this);
+
+        // Os sliders só publicam o valor; quem aplica o ganho é este componente.
+        settingsScreen->onMasterVolumeChanged = [this](float value) { setMasterGain(value); };
+        settingsScreen->onBackingVolumeChanged = [this](float value) { setBackingGain(value); };
     }
 
-    // 3. Adiciona e torna visível
+    // 3. Sliders refletem o estado real do áudio ao abrir a tela
+    settingsScreen->setMasterVolume(masterGain.load());
+    settingsScreen->setBackingVolume(backingGain);
+
+    // 4. Adiciona e torna visível
     addAndMakeVisible(*settingsScreen);
     settingsScreen->setVisible(true);
     settingsScreen->setBounds(getLocalBounds());

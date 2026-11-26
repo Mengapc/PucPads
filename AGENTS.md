@@ -87,9 +87,10 @@ Fora de `PucPads/`:
 ```
 tools/
 ├── validate_kits.py          # Valida schema/referências de áudio dos JSONs de kit
+├── run_compile_check.sh      # -fsyntax-only em TODAS as fontes do app (sem link)
 ├── kit_parser_smoke_test.cpp # Teste de fumaça do parser (executável de console)
 ├── run_kit_parser_test.sh    # Compila e roda o teste acima com JUCE
-├── launchpad_smoke_test.cpp  # Teste de fumaça da navegação/templates (headless)
+├── launchpad_smoke_test.cpp  # Teste de fumaça da navegação/templates + áudio dos pads
 └── run_launchpad_test.sh     # Compila e roda o teste acima com JUCE
 ```
 
@@ -139,7 +140,7 @@ tools/
 
 ```
 PadComponent::transportSource ─────┐
-                                   ├──► MainComponent::mixerSource ──► getNextAudioBlock()
+                                   ├──► MainComponent::mixerSource ──► ganho master (rampa) ──► getNextAudioBlock()
 PadGridComponent::backgroundSource ┘
 ```
 
@@ -147,8 +148,17 @@ PadGridComponent::backgroundSource ┘
   Captura por microfone (RF05) **exigirá** revisar essa configuração para 1 entrada.
 - Cada `PadComponent` tem seu próprio `AudioFormatManager` + `AudioTransportSource` e se registra
   no mixer (`mixerSource.addInputSource`).
+- **Ganho master** (`MainComponent::setMasterGain`, 0..1): valor em `std::atomic<float>` publicado
+  pela UI e aplicado no audio thread por `SmoothedValue` (rampa de 50 ms) — nunca chame
+  `setMasterGain` esperando efeito imediato amostra a amostra.
+- **Ganho da base** (`MainComponent::setBackingGain` → `LaunchPadComponent::setBackingGain` →
+  `PadGridComponent::setBackingGain`): vale para o template ativo e é herdado pelos templates
+  criados depois (a tela de LaunchPad é recriada a cada entrada).
 - `~PadComponent()` e `~PadGridComponent()` removem suas fontes do mixer — **mantenha esse
   contrato** (RNF04: destruição determinística, sem vazamentos nem *dangling sources*).
+  **Não** chame `transportSource.stop()` no destrutor: com o device já fechado o `stop()` do
+  `AudioTransportSource` pode girar até 1 s esperando o callback de áudio. `removeInputSource`
+  já serializa com o bloco em curso.
 
 ### 4.3 Componentes
 
@@ -159,10 +169,13 @@ PadGridComponent::backgroundSource ┘
 - **`UiTheme`** (namespace em `UiTheme.h`): fonte única do cromo institucional (bordô/dourado) e
   do estilo de `TextButton` (normal × ativo). Não duplique esses hex em componentes novos.
 - **`PadComponent`** (`Component` + `Timer`): recebe um `KitPad` + os bytes do sample
-  (`BinaryData`), toca em `mouseDown`, e anima *fade* da cor ativa a **60 Hz**
-  (`currentFade -= 0.05f`). Suporta dois modos (`playMode`):
-  - `gate` (default, comportamento histórico): para em `mouseUp`;
-  - `oneshot`: toca até o fim do sample; o brilho acompanha a duração.
+  (`BinaryData`). O **estado de áudio** fica em `trigger()` / `releaseGate()`, chamados pelos
+  eventos de mouse — a separação existe para os testes exercitarem gate/one-shot/choke sem
+  sintetizar `MouseEvent` (`mouseDown` → `trigger()`; `mouseUp`/`mouseExit` → `releaseGate()`).
+  Anima *fade* da cor ativa a **60 Hz** (`currentFade -= 0.05f`). Suporta dois modos (`playMode`):
+  - `gate` (default, comportamento histórico): para em `releaseGate()` — inclusive quando o
+    dedo/mouse **sai** do pad durante o toque (evita nota presa em multitouch);
+  - `oneshot`: toca até o fim do sample; o brilho acompanha a duração e `releaseGate()` não corta.
   Expõe `chokeStop()` (fade-out de 25 ms + stop) e o callback `onTriggered`.
 - **`PadComponent` — pad fantasma:** com `soundData == nullptr` o pad nasce **mudo**
   (`hasAudio == false`), não entra no mixer e ignora o toque; serve para a grade dos templates
@@ -187,8 +200,11 @@ PadGridComponent::backgroundSource ┘
 - **`MenuComponent`**: menu introdutório com dois `TextButton`s públicos (`launchPadButton` e
   `settingsButton`) e o título desenhado em `paint()`.
 - **`SettingsComponent`**: `masterVolumeSlider`, `backingTrackSlider` (vertical), labels e
-  `backButton`. ⚠️ **Os sliders são puramente visuais — não estão ligados a ganho algum.**
-  Conectar é item explícito do roadmap (Pad Editor).
+  `backButton`. Os sliders são **0..1 lineares com skew** (meio do curso ≈ -12 dB) e apenas
+  publicam o valor pelos callbacks `onMasterVolumeChanged` / `onBackingVolumeChanged`; quem aplica
+  o ganho é o `MainComponent` (`setMasterGain()` / `setBackingGain()`). O componente **não** conhece
+  o mixer — mantenha essa separação (a tela é só interface). `setMasterVolume()` /
+  `setBackingVolume()` posicionam os sliders com `dontSendNotification` para não realimentar o áudio.
 
 ### 4.4 Módulos planejados (ainda **não** existem no código)
 
@@ -518,13 +534,14 @@ implementar.
 
 ## 11. Testes e Verificação
 
-Não existe CI nem suíte rodando na IDE, mas há **duas verificações automatizadas** em `tools/`:
+Não existe CI nem suíte rodando na IDE, mas há **quatro verificações automatizadas** em `tools/`:
 
 | Comando | Cobre | Roda no sandbox? |
 | --- | --- | --- |
 | `python3 tools/validate_kits.py` | schema, `audioFile` existente, faixas de `gainDb`/`chokeGroup`, nomes de página duplicados, capacidade da grade, paleta | ✅ |
 | `JUCE_DIR=... ./tools/run_kit_parser_test.sh` | parser C++ real: kits atuais, regras de cor, `playMode`, `chokeGroup`, `gainDb`, grade customizada, descarte de pad inválido, **compatibilidade v1** | ✅ (requer baixar JUCE + libs) |
-| `JUCE_DIR=... ./tools/run_launchpad_test.sh` | tela de Launch Pad *headless*: 8 botões de template, template 1 com **64 pads em grade única** (16 por choke group 0/1/2/3) e **sem seletor de páginas**, grade fantasma 8×8 nos templates vazios, play/stop habilitado só com base válida, *layout* (60/70 px) e cache de views | ✅ (requer baixar JUCE + libs) |
+| `JUCE_DIR=... ./tools/run_launchpad_test.sh` | tela de Launch Pad *headless*: 8 botões de template, template 1 com **64 pads em grade única** (16 por choke group 0/1/2/3) e **sem seletor de páginas**, grade fantasma 8×8 nos templates vazios, play/stop habilitado só com base válida, *layout* (60/70 px), cache de views e **áudio dos pads**: gate para ao soltar, choke corta o vizinho do grupo após o fade, reacionar no fade cancela o corte, volume da base herdado por templates criados depois | ✅ (requer baixar JUCE + libs) |
+| `JUCE_DIR=... ./tools/run_compile_check.sh` | `g++ -fsyntax-only` em **todas** as fontes de `PucPads/Source` (pega erro de tipo/compilação em `MainComponent`, `SettingsComponent` e `Main.cpp`, que os outros harnesses não compilam) | ✅ (requer baixar JUCE + libs) |
 
 - **Adicione caso de teste** ao `kit_parser_smoke_test.cpp` sempre que o schema ganhar campo novo.
   Ele é um alvo de console (módulos core/events/graphics), não faz parte do binário do app.
@@ -570,8 +587,9 @@ Não existe CI nem suíte rodando na IDE, mas há **duas verificações automati
    em JSON; opcional pacote `.zip`.
 
 ### 13.2 Débitos e armadilhas verificados no código atual
-1. **Sliders de `SettingsComponent` sem efeito** — UI apenas; ligação ao mixer é pendente (RF03).
-   `KitPad::gainDb` já existe no schema; falta a UI de edição.
+1. ~~**Sliders de `SettingsComponent` sem efeito**~~ ✅ **Resolvido**: master e base ligados ao
+   áudio (`MainComponent::setMasterGain/setBackingGain`, rampa de 50 ms no master). O que falta de
+   RF03 é a **edição de parâmetros por pad** pela UI (Pad Editor).
 2. **Conteúdo dos kits continua genérico** — os pads agora diferem em função/choke group, mas os
    dois kits ainda usam os mesmos 5 samples (C–G). Falta material sonoro real de bateria/loops.
 3. **Toda a grade é instanciada no load** — 64 `AudioTransportSource` por template hoje são
@@ -633,6 +651,7 @@ Não existe CI nem suíte rodando na IDE, mas há **duas verificações automati
 
 | Data | Commit base do SDD | Mudanças |
 | --- | --- | --- |
+| 2026-11-26 | `7ec6100` | **Robustez e áudio:** parser com limites e normalização (§4.3 — grade ≤ 16, `gainDb` -60..+12, cor de 6 dígitos/cor inválida, `playMode`/`chokeGroup` inválidos), gate sem nota presa em `mouseExit`, mixers ligados (`setMasterGain`/`setBackingGain`), grade fantasma em kit quebrado, `tools/run_compile_check.sh`, testes de áudio no harness do LaunchPad |
 | 2026-11-25 | `5740be2` (*Revisão README*) | **Schema v2 + multi-páginas + choke groups:** novo `KitDefinition` (parser retrocompatível v1↔v2), páginas com botões no rodapé (§4.3/§9), paleta RF04 aplicada (§6.2), guias de edição de kit e regeneração de `BinaryData` (§5.2–§5.4), verificações automatizadas em `tools/` (§11), roadmap/débitos atualizados (§13) |
 | 2026-11-25 | `5740be2` (*Revisão README*) | Revisão completa: enquadramento PIBITI, RF/RNF renumerados, semântica de cores RF04 (§6), módulos planejados (`PadEditorComponent`, `AudioRecorderComponent`, `KitSerializer`), tabela de rastreabilidade requisito↔código (§10), diretrizes de áudio em tempo real (§7.1), roadmap oficial (§13.1) e guias para choke groups/multi-páginas (§9) |
 | 2026-11-24 | `c194cc7` | Criação inicial do guia (arquitetura, assets/`BinaryData`, build, convenções, débitos) |

@@ -11,6 +11,124 @@ namespace
     constexpr const char* kColourFallback = "ffffd700"; // Dourado institucional
 
     //==========================================================================
+    // Validacao/normalizacao dos campos opcionais. O parser nunca falha por causa
+    // de um campo mal preenchido: avisa no log (DBG) e cai no valor padrao, para
+    // que um kit com erro de digitacao continue abrindo em vez de travar a tela.
+    //==========================================================================
+    bool isHexString (const juce::String& text)
+    {
+        if (text.isEmpty())
+            return false;
+
+        for (int i = 0; i < text.length(); ++i)
+            if (juce::CharacterFunctions::getHexDigitValue (text[i]) < 0)
+                return false;
+
+        return true;
+    }
+
+    // 'color' aceita AARRGGBB (8 digitos) ou RRGGBB (6), com ou sem '#'.
+    // O parser do JUCE ignora caracteres nao hexadecimais: um valor de 6 digitos
+    // seria lido como alpha 0 (pad invisivel), por isso normalizamos para 8.
+    // Cor invalida cai na paleta da funcao musical em vez de virar transparente.
+    juce::Colour resolvePadColour (const juce::String& hexColour, const juce::String& function)
+    {
+        if (hexColour.isEmpty())
+            return KitDefinition::colourForFunction (function);
+
+        const auto hex = hexColour.startsWithChar ('#') ? hexColour.substring (1) : hexColour;
+
+        if ((hex.length() != 6 && hex.length() != 8) || ! isHexString (hex))
+        {
+            DBG ("AVISO: 'color' invalido (\"" + hexColour + "\"); usando a cor da funcao '"
+                 + function + "'.");
+            return KitDefinition::colourForFunction (function);
+        }
+
+        return juce::Colour::fromString (hex.length() == 6 ? "ff" + hex : hex);
+    }
+
+    int parseChokeGroup (const juce::var& value, const juce::String& where)
+    {
+        if (value.isVoid())
+            return 0;
+
+        if (! value.isInt())
+        {
+            DBG ("AVISO: " + where + " com 'chokeGroup' nao inteiro; ignorado (sem grupo).");
+            return 0;
+        }
+
+        const int group = static_cast<int> (value);
+
+        if (group < 0)
+        {
+            DBG ("AVISO: " + where + " com 'chokeGroup' negativo; ignorado (sem grupo).");
+            return 0;
+        }
+
+        return group;
+    }
+
+    // playMode: "gate" (padrao) ou "oneshot". Valor desconhecido avisa e cai em gate.
+    bool parseOneShot (const juce::String& playMode, const juce::String& where)
+    {
+        const auto mode = playMode.toLowerCase();
+
+        if (mode.isEmpty() || mode == "gate")
+            return false;
+
+        if (mode == "oneshot")
+            return true;
+
+        DBG ("AVISO: " + where + " com playMode desconhecido (\"" + playMode + "\"); usando gate.");
+        return false;
+    }
+
+    float parseGainDb (const juce::var& value, const juce::String& where)
+    {
+        if (value.isVoid())
+            return 0.0f;
+
+        if (! value.isInt() && ! value.isDouble())
+        {
+            DBG ("AVISO: " + where + " com 'gainDb' nao numerico; usando 0 dB.");
+            return 0.0f;
+        }
+
+        const auto gain    = static_cast<float> (static_cast<double> (value));
+        const auto clamped = juce::jlimit (kKitMinGainDb, kKitMaxGainDb, gain);
+
+        if (clamped != gain)
+            DBG ("AVISO: " + where + " com gainDb=" + juce::String (gain)
+                 + " fora da faixa; limitado a " + juce::String (clamped) + " dB.");
+
+        return clamped;
+    }
+
+    int parseGridSide (int value, int fallback, const char* field)
+    {
+        if (value <= 0)
+        {
+            if (value < 0)
+                DBG ("AVISO: grid." + juce::String (field) + " negativo; usando o padrao "
+                     + juce::String (fallback) + ".");
+
+            return fallback;
+        }
+
+        if (value > kKitMaxGridSide)
+        {
+            DBG ("AVISO: grid." + juce::String (field) + "=" + juce::String (value)
+                 + " acima do limite; limitado a " + juce::String (kKitMaxGridSide) + ".");
+
+            return kKitMaxGridSide;
+        }
+
+        return value;
+    }
+
+    //==========================================================================
     // Le uma pagina de pads a partir do var "pads" (array de objetos).
     void parsePads (KitPage& page, const juce::var& padsVar)
     {
@@ -42,19 +160,21 @@ namespace
                 continue;
             }
 
+            // Identificacao do pad nas mensagens de log (o audioFile e unico na pagina).
+            const juce::String where = "pagina '" + page.name + "', pad '" + pad.audioFile + "'";
+
             pad.function = padObj->getProperty ("function").toString().trim().toLowerCase();
 
-            // 'color' (hex ARGB) tem prioridade sobre 'function': permite customizacao (RF04).
-            const juce::String hexColour = padObj->getProperty ("color").toString().trim();
-            pad.colour = hexColour.isNotEmpty() ? juce::Colour::fromString (hexColour)
-                                                : KitDefinition::colourForFunction (pad.function);
+            // 'color' (hex) tem prioridade sobre 'function': permite customizacao (RF04).
+            pad.colour = resolvePadColour (padObj->getProperty ("color").toString().trim(),
+                                           pad.function);
 
-            pad.chokeGroup = juce::jmax (0, static_cast<int> (padObj->getProperty ("chokeGroup")));
+            pad.chokeGroup = parseChokeGroup (padObj->getProperty ("chokeGroup"), where);
 
-            const juce::String playMode = padObj->getProperty ("playMode").toString().trim().toLowerCase();
-            pad.oneShot = (playMode == "oneshot");
+            const juce::String playMode = padObj->getProperty ("playMode").toString().trim();
+            pad.oneShot = parseOneShot (playMode, where);
 
-            pad.gainDb = static_cast<float> (static_cast<double> (padObj->getProperty ("gainDb")));
+            pad.gainDb = parseGainDb (padObj->getProperty ("gainDb"), where);
 
             page.pads.add (pad);
         }
@@ -114,8 +234,8 @@ KitDefinition KitDefinition::fromJson (const juce::var& json)
         const int columns = static_cast<int> (gridObj->getProperty ("columns"));
         const int rows    = static_cast<int> (gridObj->getProperty ("rows"));
 
-        if (columns > 0) kit.columns = columns;
-        if (rows    > 0) kit.rows    = rows;
+        kit.columns = parseGridSide (columns, kKitDefaultColumns, "columns");
+        kit.rows    = parseGridSide (rows,    kKitDefaultRows,    "rows");
     }
 
     //------------------------------------------------------------------

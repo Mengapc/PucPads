@@ -27,7 +27,9 @@ if [ -z "$JUCE_DIR" ] || [ ! -d "$JUCE_DIR/modules" ]; then
     exit 1
 fi
 
-FLAGS=(-DJUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1 -DJUCE_USE_MP3AUDIOFORMAT=0 -DJUCE_WEB_BROWSER=0)
+# JUCE_MODAL_LOOPS_PERMITTED=1: o teste bombeia a fila de mensagens para os
+# timers de fade do choke group (25 ms) rodarem. Nao muda o app, so o harness.
+FLAGS=(-DJUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1 -DJUCE_USE_MP3AUDIOFORMAT=0 -DJUCE_WEB_BROWSER=0 -DJUCE_MODAL_LOOPS_PERMITTED=1)
 LIBS=(-lpthread -ldl -lasound -lX11 -lXext -lXinerama -lXcursor -lXrandr -lGL -lfreetype -lfontconfig -lcurl -lz -lharfbuzz)
 
 mkdir -p "$BUILD_DIR/objs"

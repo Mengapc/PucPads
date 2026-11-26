@@ -23,6 +23,8 @@ PadGridComponent::PadGridComponent (juce::MixerAudioSource& mixerToUse, const ju
 
 PadGridComponent::~PadGridComponent()
 {
+    // Mesma regra do PadComponent: remover do mixer e o que garante que o audio
+    // thread nao toque mais nesta base durante o desmonte.
     mixerSource.removeInputSource (&backgroundSource);
 }
 
@@ -38,7 +40,8 @@ void PadGridComponent::loadKit (const juce::String& kitResource)
 
     if (dataSize == 0 || jsonData == nullptr)
     {
-        DBG("ERRO FATAL: O arquivo '" + kitResource + "' nao foi encontrado!");
+        DBG("ERRO: o recurso '" + kitResource + "' nao foi encontrado! Abrindo grade vazia.");
+        buildEmptyTemplate();
         return;
     }
 
@@ -48,8 +51,12 @@ void PadGridComponent::loadKit (const juce::String& kitResource)
 
     if (! kit.isValid())
     {
-        DBG("ERRO FATAL: JSON do kit invalido (sem paginas ou com grade invalida). "
-            "Verifique virgulas faltando ou chaves incorretas!");
+        DBG("ERRO: JSON do kit invalido (sem paginas ou com grade invalida). "
+            "Verifique virgulas faltando ou chaves incorretas! Abrindo grade vazia.");
+
+        // Um kit quebrado nao deve deixar a area de performance em branco: a
+        // grade fantasma preserva o layout e serve de ponto de partida ao editor.
+        buildEmptyTemplate();
         return;
     }
 
@@ -99,6 +106,7 @@ void PadGridComponent::loadBackingTrack (const juce::String& trackName)
 
     backgroundReaderSource.reset (new juce::AudioFormatReaderSource (reader, true));
     backgroundSource.setSource (backgroundReaderSource.get(), 0, nullptr, reader->sampleRate);
+    backgroundSource.setGain (backingGain);
     backingLoaded = true;
 
     // Conecta a base ao Mixer Principal!
@@ -118,6 +126,12 @@ void PadGridComponent::playBackingTrack()
 void PadGridComponent::stopBackingTrack()
 {
     backgroundSource.stop();
+}
+
+void PadGridComponent::setBackingGain (float gain)
+{
+    backingGain = juce::jlimit (0.0f, 1.0f, gain);
+    backgroundSource.setGain (backingGain);
 }
 
 //==============================================================================
